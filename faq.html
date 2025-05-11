@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAQs - Health Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #f8f9fa;
+    }
+    .faq-item {
+      transition: all 0.3s ease;
+    }
+    .faq-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+    .faq-item.active .faq-answer {
+      max-height: 500px;
+    }
+    .faq-item.active .faq-toggle {
+      transform: rotate(180deg);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex justify-center items-start p-4 pt-12 bg-gray-50">
+
+  <div class="w-full max-w-3xl bg-white rounded-xl shadow-md overflow-hidden">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-purple-600 to-blue-500 p-6 text-white">
+      <div class="flex items-center">
+        <div class="bg-white bg-opacity-20 p-3 rounded-full mr-4">
+          <i class="fas fa-question-circle text-xl"></i>
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold">Frequently Asked Questions</h1>
+          <p class="text-sm opacity-90">Quick answers to common questions</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="p-6 border-b border-gray-200">
+      <div class="relative">
+        <input type="text" 
+               placeholder="Search FAQs..." 
+               class="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-200">
+        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+      </div>
+    </div>
+
+    <!-- FAQ Categories -->
+    <div class="p-6">
+      <div class="flex flex-wrap gap-2 mb-6">
+        <button class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">All</button>
+        <button class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">Appointments</button>
+        <button class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">Billing</button>
+        <button class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">Prescriptions</button>
+        <button class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">Records</button>
+        <button class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">COVID-19</button>
+      </div>
+
+      <!-- FAQ List -->
+      <div class="space-y-3">
+        <!-- FAQ Item 1 -->
+        <div class="faq-item bg-white border border-gray-200 rounded-lg p-4 cursor-pointer">
+          <div class="flex justify-between items-center">
+            <h3 class="font-medium">How do I book an appointment?</h3>
+            <button class="faq-toggle text-gray-400 transition">
+              <i class="fas fa-chevron-down"></i>
+            </button>
+          </div>
+          <div class="faq-answer mt-2 text-sm text-gray-600">
+            <p>You can book appointments through our online portal, mobile app, or by calling our reception at (800) 555-1234. Online booking is available 24/7.</p>
+            <p class="mt-2">For urgent appointments, please call our office directly.</p>
+          </div>
+        </div>
+
+        <!-- FAQ Item 2 -->
+        <div class="faq-item bg-white border border-gray-200 rounded-lg p-4 cursor-pointer">
+          <div class="flex justify-between items-center">
+            <h3 class="font-medium">What insurance plans do you accept?</h3>
+            <button class="faq-toggle text-gray-400 transition">
+              <i class="fas fa-chevron-down"></i>
+            </button>
+          </div>
+          <div class="faq-answer mt-2 text-sm text-gray-600">
+            <p>We accept most major insurance plans including:</p>
+            <ul class="list-disc pl-5 mt-1 space-y-1">
+              <li>Blue Cross Blue Shield</li>
+              <li>Aetna</li>
+              <li>UnitedHealthcare</li>
+              <li>Cigna</li>
+              <li>Medicare</li>
+            </ul>
+            <p class="mt-2">Please contact our billing department to verify your specific plan.</p>
+          </div>
+        </div>
+
+        <!-- FAQ Item 3 -->
+        <div class="faq-item bg-white border border-gray-200 rounded-lg p-4 cursor-pointer">
+          <div class="flex justify-between items-center">
+            <h3 class="font-medium">How do I access my medical records?</h3>
+            <button class="faq-toggle text-gray-400 transition">
+              <i class="fas fa-chevron-down"></i>
+            </button>
+          </div>
+          <div class="faq-answer mt-2 text-sm text-gray-600">
+            <p>You can access your medical records through our patient portal. To sign up:</p>
+            <ol class="list-decimal pl-5 mt-1 space-y-1">
+              <li>Visit our website and click "Patient Portal"</li>
+              <li>Click "Register New Account"</li>
+              <li>Enter your personal information and verification code (provided during your last visit)</li>
+              <li>Create your login credentials</li>
+            </ol>
+            <p class="mt-2">For immediate assistance, call medical records at (800) 555-5678.</p>
+          </div>
+        </div>
+
+        <!-- FAQ Item 4 -->
+        <div class="faq-item bg-white border border-gray-200 rounded-lg p-4 cursor-pointer">
+          <div class="flex justify-between items-center">
+            <h3 class="font-medium">What are your COVID-19 safety measures?</h3>
+            <button class="faq-toggle text-gray-400 transition">
+              <i class="fas fa-chevron-down"></i>
+            </button>
+          </div>
+          <div class="faq-answer mt-2 text-sm text-gray-600">
+            <p>We maintain strict safety protocols:</p>
+            <ul class="list-disc pl-5 mt-1 space-y-1">
+              <li>Mandatory masks for all patients and staff</li>
+              <li>Enhanced cleaning between patients</li>
+              <li>Social distancing in waiting areas</li>
+              <li>HEPA air filtration systems</li>
+              <li>Virtual visit options available</li>
+            </ul>
+            <p class="mt-2">Please reschedule if you have any COVID-19 symptoms.</p>
+          </div>
+        </div>
+
+        <!-- FAQ Item 5 -->
+        <div class="faq-item bg-white border border-gray-200 rounded-lg p-4 cursor-pointer">
+          <div class="flex justify-between items-center">
+            <h3 class="font-medium">How do I request a prescription refill?</h3>
+            <button class="faq-toggle text-gray-400 transition">
+              <i class="fas fa-chevron-down"></i>
+            </button>
+          </div>
+          <div class="faq-answer mt-2 text-sm text-gray-600">
+            <p>Prescription refills can be requested:</p>
+            <ul class="list-disc pl-5 mt-1 space-y-1">
+              <li>Through the patient portal (fastest method)</li>
+              <li>By calling our prescription line at (800) 555-7890</li>
+              <li>Through your pharmacy (they will contact us)</li>
+            </ul>
+            <p class="mt-2">Please allow 48 hours for processing. Controlled substances require office visits.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Still Need Help? -->
+      <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 mt-6">
+        <h3 class="font-medium text-blue-800 mb-2">Still need help?</h3>
+        <p class="text-sm text-blue-600 mb-3">If you didn't find the answer to your question, our support team is available to assist you.</p>
+        <button onclick="window.location.href='support.html'" 
+                class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+          Contact Support
+        </button>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="bg-gray-50 border-t border-gray-200 p-4 text-center">
+      <a href="dashboard.html" 
+         class="inline-flex items-center text-purple-600 hover:text-purple-800 hover:underline">
+        <i class="fas fa-arrow-left mr-2"></i>
+        Back to Dashboard
+      </a>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // FAQ toggle functionality
+      const faqItems = document.querySelectorAll('.faq-item');
+      
+      faqItems.forEach(item => {
+        item.addEventListener('click', function() {
+          this.classList.toggle('active');
+        });
+      });
+
+      // Simple search functionality
+      const searchInput = document.querySelector('input[type="text"]');
+      
+      searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        
+        faqItems.forEach(item => {
+          const question = item.querySelector('h3').textContent.toLowerCase();
+          if (question.includes(searchTerm)) {
+            item.style.display = 'block';
+          } else {
+            item.style.display = 'none';
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>

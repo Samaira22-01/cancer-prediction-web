@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Support Center</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #f8f9fa;
+    }
+    .emergency-btn {
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
+    }
+    .contact-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex justify-center items-start p-4 pt-12 bg-gray-50">
+
+  <div class="w-full max-w-2xl bg-white rounded-xl shadow-md overflow-hidden">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-purple-600 to-blue-500 p-6 text-white">
+      <div class="flex items-center">
+        <div class="bg-white bg-opacity-20 p-3 rounded-full mr-4">
+          <i class="fas fa-headset text-xl"></i>
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold">Support Center</h1>
+          <p class="text-sm opacity-90">Direct contact options for assistance</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="p-6">
+      <!-- Emergency Section -->
+      <div class="mb-8">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+          <i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>
+          Emergency Contacts
+        </h2>
+        <div class="bg-red-50 border border-red-100 rounded-lg p-4 mb-4">
+          <p class="text-sm text-red-600 mb-3">For life-threatening emergencies, call immediately:</p>
+          <button onclick="window.location.href='tel:911'" 
+                  class="emergency-btn w-full bg-red-600 text-white py-3 rounded-lg font-bold mb-2">
+            <i class="fas fa-phone-alt mr-2"></i>
+            Call 911 (US Emergency)
+          </button>
+          <button onclick="window.location.href='tel:112'" 
+                  class="w-full bg-gray-800 text-white py-3 rounded-lg font-bold">
+            <i class="fas fa-globe-americas mr-2"></i>
+            International Emergency (112)
+          </button>
+        </div>
+      </div>
+
+      <!-- Regular Support -->
+      <div class="mb-8">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+          <i class="fas fa-question-circle text-purple-500 mr-2"></i>
+          Support Options
+        </h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Phone Support -->
+          <div class="contact-card bg-white border border-gray-200 rounded-lg p-4 transition">
+            <div class="flex items-center mb-3">
+              <div class="bg-blue-100 p-2 rounded-full mr-3">
+                <i class="fas fa-phone-alt text-blue-600"></i>
+              </div>
+              <h3 class="font-medium">Phone Support</h3>
+            </div>
+            <p class="text-sm text-gray-600 mb-2">Available 24/7 for urgent inquiries</p>
+            <a href="tel:+18005551234" class="text-blue-600 font-medium">+1 (800) 555-1234</a>
+          </div>
+          
+          <!-- Email Support -->
+          <div class="contact-card bg-white border border-gray-200 rounded-lg p-4 transition">
+            <div class="flex items-center mb-3">
+              <div class="bg-purple-100 p-2 rounded-full mr-3">
+                <i class="fas fa-envelope text-purple-600"></i>
+              </div>
+              <h3 class="font-medium">Email Support</h3>
+            </div>
+            <p class="text-sm text-gray-600 mb-2">Typically responds within 24 hours</p>
+            <a href="mailto:support@healthportal.com" class="text-purple-600 font-medium">support@healthportal.com</a>
+          </div>
+          
+          <!-- Live Chat -->
+          <div class="contact-card bg-white border border-gray-200 rounded-lg p-4 transition">
+            <div class="flex items-center mb-3">
+              <div class="bg-green-100 p-2 rounded-full mr-3">
+                <i class="fas fa-comment-dots text-green-600"></i>
+              </div>
+              <h3 class="font-medium">Live Chat</h3>
+            </div>
+            <p class="text-sm text-gray-600 mb-2">Mon-Fri, 8AM-8PM EST</p>
+            <button onclick="window.location.href='livechat.html'" class="text-green-600 font-medium">Start Chat</button>
+          </div>
+          
+          <!-- FAQ -->
+          <div class="contact-card bg-white border border-gray-200 rounded-lg p-4 transition">
+            <div class="flex items-center mb-3">
+              <div class="bg-orange-100 p-2 rounded-full mr-3">
+                <i class="fas fa-book-open text-orange-600"></i>
+              </div>
+              <h3 class="font-medium">FAQs</h3>
+            </div>
+            <p class="text-sm text-gray-600 mb-2">Common questions and answers</p>
+            <button onclick="window.location.href='faq.html'" class="text-orange-600 font-medium">View FAQs</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Support Hours -->
+      <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6">
+        <h3 class="font-semibold text-blue-800 mb-2 flex items-center">
+          <i class="fas fa-clock text-blue-500 mr-2"></i>
+          Support Hours
+        </h3>
+        <ul class="text-sm text-gray-700 space-y-1">
+          <li class="flex justify-between">
+            <span>Monday-Friday:</span>
+            <span class="font-medium">8:00 AM - 8:00 PM</span>
+          </li>
+          <li class="flex justify-between">
+            <span>Saturday:</span>
+            <span class="font-medium">9:00 AM - 5:00 PM</span>
+          </li>
+          <li class="flex justify-between">
+            <span>Sunday:</span>
+            <span class="font-medium">Closed</span>
+          </li>
+        </ul>
+      </div>
+
+      
+    <!-- Footer -->
+    <div class="bg-gray-50 border-t border-gray-200 p-4 text-center">
+      <a href="dashboard.html" 
+         class="inline-flex items-center text-purple-600 hover:text-purple-800 hover:underline">
+        <i class="fas fa-arrow-left mr-2"></i>
+        Back to Dashboard
+      </a>
+    </div>
+  </div>
+</body>
+</html>

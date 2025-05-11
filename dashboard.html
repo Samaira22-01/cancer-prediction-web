@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Health Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e6f0ff 100%);
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+    .dashboard-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      transition: all 0.3s ease;
+    }
+    .dashboard-card:hover {
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+    }
+    .dashboard-button {
+      background: linear-gradient(135deg, #6e45e2 0%, #4e3ac1 100%);
+      color: white;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(110, 69, 226, 0.25);
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+    .dashboard-button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(110, 69, 226, 0.35);
+    }
+    .dashboard-button:active {
+      transform: translateY(0);
+    }
+    .emergency-button {
+      background: linear-gradient(135deg, #ff4d4d 0%, #cc0000 100%);
+      box-shadow: 0 4px 15px rgba(255, 77, 77, 0.25);
+    }
+    .emergency-button:hover {
+      box-shadow: 0 8px 25px rgba(255, 77, 77, 0.35);
+    }
+    .chatbot-icon {
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3);
+      transition: all 0.3s ease;
+    }
+    .chatbot-icon:hover {
+      transform: scale(1.1) rotate(10deg);
+      box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+    }
+    .feature-icon {
+      transition: all 0.3s ease;
+      width: 40px;
+      height: 40px;
+      object-fit: cover;
+      border-radius: 8px;
+      background-color: rgba(255,255,255,0.2);
+      padding: 5px;
+    }
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+      100% { transform: translateY(0px); }
+    }
+    .floating {
+      animation: float 3s ease-in-out infinite;
+    }
+    .logo-img {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 4px solid white;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      animation: logoPulse 4s ease-in-out infinite, logoRotate 20s linear infinite;
+      transform-style: preserve-3d;
+    }
+    @keyframes logoPulse {
+      0%, 100% { 
+        transform: scale(1) rotate(0deg);
+        box-shadow: 0 0 0 0 rgba(110, 69, 226, 0.4);
+      }
+      50% { 
+        transform: scale(1.1) rotate(5deg);
+        box-shadow: 0 0 0 15px rgba(110, 69, 226, 0);
+      }
+    }
+    @keyframes logoRotate {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .logo-container {
+      position: relative;
+      display: inline-block;
+    }
+    .logo-glow {
+      position: absolute;
+      top: -10px;
+      left: -10px;
+      right: -10px;
+      bottom: -10px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(110, 69, 226, 0.2) 0%, rgba(110, 69, 226, 0) 70%);
+      animation: glowPulse 3s ease-in-out infinite;
+      z-index: -1;
+    }
+    @keyframes glowPulse {
+      0%, 100% { opacity: 0.6; transform: scale(0.9); }
+      50% { opacity: 0.9; transform: scale(1.1); }
+    }
+    .ripple {
+      position: absolute;
+      background: rgba(255,255,255,0.4);
+      border-radius: 50%;
+      transform: scale(0);
+      animation: ripple 0.6s linear;
+      pointer-events: none;
+      width: 20px;
+      height: 20px;
+      margin-left: -10px;
+      margin-top: -10px;
+    }
+    @keyframes ripple {
+      to {
+        transform: scale(10);
+        opacity: 0;
+      }
+    }
+    #loadingOverlay {
+      display: flex;
+      position: fixed;
+      inset: 0;
+      background: rgba(255,255,255,.8);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    #errorAlert {
+      position: fixed;
+      top: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+    }
+  </style>
+</head>
+<body class="flex justify-center items-center p-4 md:p-8">
+
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay">
+    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+  </div>
+
+  <!-- Error Alert -->
+  <div id="errorAlert" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded"></div>
+
+  <div class="dashboard-card p-8 w-full max-w-2xl relative">
+    <!-- Logout Button -->
+    <button id="logoutBtn" class="absolute top-4 right-4 text-gray-500 hover:text-indigo-600 transition" title="Logout">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+      </svg>
+    </button>
+
+    <!-- Header -->
+    <div class="flex flex-col items-center mb-8">
+      <div class="logo-container mb-4">
+        <div class="logo-glow"></div>
+        <img src="https://cdn-icons-png.flaticon.com/512/2969/2969398.png" 
+             alt="Health Portal Logo" 
+             class="logo-img">
+      </div>
+      <h1 id="welcomeMessage" class="text-3xl font-bold text-center text-gray-800 mb-2">Welcome to Your Health Dashboard</h1>
+      <p id="userEmail" class="text-center text-gray-500">Loading your account...</p>
+    </div>
+
+    <!-- Features Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <!-- Symptoms Checker -->
+      <button onclick="window.location.href='symptomChecker.html'" class="dashboard-button p-5 flex items-center">
+        <img src="https://i.pinimg.com/736x/bd/84/b7/bd84b71ae517727ff034b84a4e2e334c.jpg" 
+             alt="Symptoms Checker" 
+             class="feature-icon mr-4">
+        <div class="text-left">
+          <h3 class="font-semibold text-lg">Symptoms Checker</h3>
+          <p class="text-sm opacity-90">Identify potential conditions</p>
+        </div>
+      </button>
+
+      <!-- Treatment Tracker -->
+      <button onclick="window.location.href='treatmentTracker.html'" class="dashboard-button p-5 flex items-center">
+        <img src="https://cdn-icons-png.flaticon.com/512/3652/3652191.png" 
+             alt="Treatment Tracker" 
+             class="feature-icon mr-4">
+        <div class="text-left">
+          <h3 class="font-semibold text-lg">Treatment Tracker</h3>
+          <p class="text-sm opacity-90">Monitor your medications</p>
+        </div>
+      </button>
+
+      <!-- Consultation -->
+      <button onclick="window.location.href='consultation.html'" class="dashboard-button p-5 flex items-center">
+        <img src="https://i.pinimg.com/736x/20/95/a7/2095a72f390f72074776019b7004d776.jpg" 
+             alt="Consultation" 
+             class="feature-icon mr-4">
+        <div class="text-left">
+          <h3 class="font-semibold text-lg">Doctor Consultation</h3>
+          <p class="text-sm opacity-90">Connect with specialists</p>
+        </div>
+      </button>
+
+      <!-- Health Records -->
+      <button onclick="window.location.href='viewRecords.html'" class="dashboard-button p-5 flex items-center">
+        <img src="https://i.pinimg.com/736x/8a/a4/57/8aa457e1d8b58ad6c054af60b0ca1532.jpg" 
+             alt="Health Records" 
+             class="feature-icon mr-4">
+        <div class="text-left">
+          <h3 class="font-semibold text-lg">Health Records</h3>
+          <p class="text-sm opacity-90">Access your medical history</p>
+        </div>
+      </button>
+
+      <!-- About Us -->
+      <button onclick="window.location.href='about.html'" class="dashboard-button p-5 flex items-center">
+        <img src="https://cdn-icons-png.flaticon.com/512/1570/1570887.png" 
+             alt="About Us" 
+             class="feature-icon mr-4">
+        <div class="text-left">
+          <h3 class="font-semibold text-lg">About Us</h3>
+          <p class="text-sm opacity-90">Learn about our mission</p>
+        </div>
+      </button>
+
+      <!-- Emergency Button -->
+      <button onclick="window.location.href='emergency.html'" class="dashboard-button emergency-button p-5 flex items-center">
+        <img src="https://i.pinimg.com/736x/31/ff/75/31ff75d390ad951ca62d3f1ee447352b.jpg" 
+             alt="Emergency" 
+             class="feature-icon mr-4">
+        <div class="text-left">
+          <h3 class="font-semibold text-lg">Emergency</h3>
+          <p class="text-sm opacity-90">Immediate assistance</p>
+        </div>
+      </button>
+    </div>
+
+    <div class="mt-8 pt-6 border-t border-gray-200 text-center">
+      <p class="text-gray-600">
+        Need help? <a href="support.html" class="text-indigo-500 font-medium hover:underline">Contact Support</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- Chatbot Icon -->
+  <button onclick="window.location.href='chatbot.html'" class="chatbot-icon fixed right-6 bottom-6 w-16 h-16 rounded-full text-white text-2xl flex items-center justify-center z-50 floating">
+    💬
+  </button>
+
+  <!-- Firebase Integration -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { 
+      getAuth, 
+      onAuthStateChanged, 
+      signOut,
+      browserLocalPersistence,
+      setPersistence
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCGelEuSnOm0gy0sMNEwpvqGnQO7gWyEaI",
+      authDomain: "cancer-prediction-8bfbe.firebaseapp.com",
+      projectId: "cancer-prediction-8bfbe",
+      storageBucket: "cancer-prediction-8bfbe.appspot.com",
+      messagingSenderId: "939540065705",
+      appId: "1:939540065705:web:3a049e64c4bb886fdbe8b8"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Set persistence
+    setPersistence(auth, browserLocalPersistence)
+      .catch((error) => {
+        console.error("Persistence error:", error);
+      });
+
+    // Check auth state
+    onAuthStateChanged(auth, (user) => {
+      const loadingOverlay = document.getElementById('loadingOverlay');
+      
+      if (!user) {
+        // No user signed in, redirect to login
+        console.log("No user found, redirecting to login...");
+        window.location.href = "login.html";
+        return;
+      }
+
+      // User is signed in
+      console.log("User authenticated:", user.email);
+      document.getElementById('welcomeMessage').textContent = `Welcome back, ${user.email.split('@')[0]}`;
+      document.getElementById('userEmail').textContent = user.email;
+      loadingOverlay.style.display = 'none';
+    });
+
+    // Logout button
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      try {
+        document.getElementById('loadingOverlay').style.display = 'flex';
+        await signOut(auth);
+        window.location.href = "login.html";
+      } catch (error) {
+        console.error("Logout error:", error);
+        document.getElementById('loadingOverlay').style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>

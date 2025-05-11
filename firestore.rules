@@ -1,0 +1,56 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Users can only access their own user document
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Medications - users can only access their own medications
+    match /medications/{medicationId} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    // Appointments - users can only access their own appointments
+    match /appointments/{appointmentId} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    // Treatments - users can only access their own treatments
+    match /treatments/{treatmentId} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null;
+    }
+
+    // Cancer assessments - users can only access their own assessments
+    match /cancerAssessments/{assessmentId} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    // Chats - users can only access their own chat documents
+    match /chats/{chatId} {
+      allow read, write: if request.auth != null && request.auth.uid == chatId;
+    }
+
+    // Health records - users can only access their own records
+    match /healthRecords/{recordId} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    // Medical records (alternative naming) - users can only access their own records
+    match /records/{recordId} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    // Health metrics - users can only access their own metrics
+    match /metrics/{metricId} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    // Default deny-all rule for any other collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

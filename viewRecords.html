@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediTrack - Healthcare Dashboard</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+  <style>
+    .sidebar {
+      transition: all 0.3s ease;
+    }
+    .sidebar-collapsed {
+      width: 80px;
+    }
+    .sidebar-collapsed .sidebar-text {
+      display: none;
+    }
+    .sidebar-collapsed .nav-link {
+      justify-content: center;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 font-sans">
+  <!-- Login Modal -->
+  <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-lg p-6 w-full max-w-md">
+      <h2 class="text-2xl font-bold mb-4">Login to MediTrack</h2>
+      <div id="loginError" class="text-red-500 mb-4 hidden"></div>
+      <form id="loginForm">
+        <div class="mb-4">
+          <label class="block text-gray-700 mb-2" for="loginEmail">Email</label>
+          <input type="email" id="loginEmail" class="w-full px-3 py-2 border rounded-lg" required>
+        </div>
+        <div class="mb-4">
+          <label class="block text-gray-700 mb-2" for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" class="w-full px-3 py-2 border rounded-lg" required>
+        </div>
+        <button type="submit" class="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition">
+          Login
+        </button>
+      </form>
+      <p class="mt-4 text-center">
+        Don't have an account? 
+        <button id="showRegister" class="text-blue-500 hover:underline">Register</button>
+      </p>
+    </div>
+  </div>
+
+  <!-- Register Modal -->
+  <div id="registerModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-lg p-6 w-full max-w-md">
+      <h2 class="text-2xl font-bold mb-4">Create Account</h2>
+      <div id="registerError" class="text-red-500 mb-4 hidden"></div>
+      <form id="registerForm">
+        <div class="mb-4">
+          <label class="block text-gray-700 mb-2" for="registerName">Full Name</label>
+          <input type="text" id="registerName" class="w-full px-3 py-2 border rounded-lg" required>
+        </div>
+        <div class="mb-4">
+          <label class="block text-gray-700 mb-2" for="registerEmail">Email</label>
+          <input type="email" id="registerEmail" class="w-full px-3 py-2 border rounded-lg" required>
+        </div>
+        <div class="mb-4">
+          <label class="block text-gray-700 mb-2" for="registerPassword">Password</label>
+          <input type="password" id="registerPassword" class="w-full px-3 py-2 border rounded-lg" required>
+        </div>
+        <button type="submit" class="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition">
+          Register
+        </button>
+      </form>
+      <p class="mt-4 text-center">
+        Already have an account? 
+        <button id="showLogin" class="text-blue-500 hover:underline">Login</button>
+      </p>
+    </div>
+  </div>
+
+  <!-- App Container (shown after login) -->
+  <div id="appContainer" class="flex min-h-screen hidden">
+    <!-- Sidebar -->
+    <div id="sidebar" class="sidebar bg-gray-800 text-white h-screen fixed">
+      <div class="p-4 flex items-center border-b border-gray-700">
+        <img src="https://i.pinimg.com/736x/0f/dc/7b/0fdc7b633812550eb2a29fd2e7f289ee.jpg" alt="Logo" class="w-10 h-10 rounded-full mr-3">
+        <h3 class="sidebar-text text-lg font-semibold">MediTrack</h3>
+        <button id="toggleSidebar" class="ml-auto text-gray-400 hover:text-white">
+          <i class="fas fa-bars"></i>
+        </button>
+      </div>
+      <ul class="p-2">
+        <li>
+          <a href="#" class="nav-link flex items-center p-3 rounded-lg text-white bg-blue-600">
+            <i class="fas fa-home mr-3"></i>
+            <span class="sidebar-text">Dashboard</span>
+          </a>
+        </li>
+        <li class="mt-1">
+          <a href="#" data-tab="records" class="nav-link flex items-center p-3 rounded-lg text-gray-300 hover:bg-gray-700">
+            <i class="fas fa-file-medical mr-3"></i>
+            <span class="sidebar-text">Medical Records</span>
+          </a>
+        </li>
+        <li class="mt-1">
+          <a href="#" data-tab="appointments" class="nav-link flex items-center p-3 rounded-lg text-gray-300 hover:bg-gray-700">
+            <i class="fas fa-calendar-check mr-3"></i>
+            <span class="sidebar-text">Appointments</span>
+          </a>
+        </li>
+        <li class="mt-1">
+          <a href="#" data-tab="medications" class="nav-link flex items-center p-3 rounded-lg text-gray-300 hover:bg-gray-700">
+            <i class="fas fa-prescription-bottle-alt mr-3"></i>
+            <span class="sidebar-text">Medications</span>
+          </a>
+        </li>
+        <li class="mt-1">
+          <a href="#" data-tab="metrics" class="nav-link flex items-center p-3 rounded-lg text-gray-300 hover:bg-gray-700">
+            <i class="fas fa-heartbeat mr-3"></i>
+            <span class="sidebar-text">Health Metrics</span>
+          </a>
+        </li>
+        <li class="mt-1">
+          <a href="#" class="nav-link flex items-center p-3 rounded-lg text-gray-300 hover:bg-gray-700">
+            <i class="fas fa-user-md mr-3"></i>
+            <span class="sidebar-text">Care Team</span>
+          </a>
+        </li>
+        <li class="mt-1">
+          <a href="#" class="nav-link flex items-center p-3 rounded-lg text-gray-300 hover:bg-gray-700">
+            <i class="fas fa-cog mr-3"></i>
+            <span class="sidebar-text">Settings</span>
+          </a>
+        </li>
+        <li class="mt-1">
+          <button id="logoutBtn" class="w-full text-left nav-link flex items-center p-3 rounded-lg text-gray-300 hover:bg-gray-700">
+            <i class="fas fa-sign-out-alt mr-3"></i>
+            <span class="sidebar-text">Logout</span>
+          </button>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div id="mainContent" class="flex-1 ml-64 transition-all duration-300">
+      <div class="p-6">
+        <!-- Header Section -->
+        <div id="userHeader" class="flex items-center mb-8">
+          <img src="https://i.pinimg.com/736x/db/6d/31/db6d3148a32f383c1bf040d5ea27951b.jpg" alt="User" class="w-16 h-16 rounded-full mr-4">
+          <div>
+            <h1 id="welcomeMessage" class="text-2xl font-bold">Welcome, User</h1>
+            <p class="text-gray-500">Last updated: <span id="lastUpdated">Today, 10:30 AM</span></p>
+          </div>
+        </div>
+
+        <!-- Dashboard Widgets -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="font-semibold text-gray-700">Upcoming Appointments</h3>
+              <button class="text-gray-400 hover:text-blue-500">
+                <i class="fas fa-plus"></i>
+              </button>
+            </div>
+            <div class="text-3xl font-bold text-blue-500 mb-1" id="appointmentsCount">2</div>
+            <div class="text-sm text-gray-500" id="nextAppointment">Next: Dr. Smith, May 15</div>
+          </div>
+          
+          <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="font-semibold text-gray-700">Active Medications</h3>
+              <button class="text-gray-400 hover:text-blue-500" id="addMedicationBtn">
+                <i class="fas fa-plus"></i>
+              </button>
+            </div>
+            <div class="text-3xl font-bold text-blue-500 mb-1" id="medicationsCount">5</div>
+            <div class="text-sm text-gray-500" id="dueMedications">2 due today</div>
+          </div>
+          
+          <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="font-semibold text-gray-700">Recent Tests</h3>
+              <button class="text-gray-400 hover:text-blue-500">
+                <i class="fas fa-plus"></i>
+              </button>
+            </div>
+            <div class="text-3xl font-bold text-blue-500 mb-1" id="testsCount">3</div>
+            <div class="text-sm text-gray-500" id="lastTest">Last: Blood Work, May 5</div>
+          </div>
+          
+          <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="font-semibold text-gray-700">Health Alerts</h3>
+              <button class="text-gray-400 hover:text-blue-500">
+                <i class="fas fa-bell"></i>
+              </button>
+            </div>
+            <div class="text-3xl font-bold text-blue-500 mb-1" id="alertsCount">1</div>
+            <div class="text-sm text-gray-500" id="alertMessage">High blood pressure</div>
+          </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="flex border-b border-gray-200 mb-6">
+          <button class="tab-button px-4 py-2 font-medium text-blue-500 border-b-2 border-blue-500" data-tab="overview">
+            Overview
+          </button>
+          <button class="tab-button px-4 py-2 font-medium text-gray-500 hover:text-blue-500" data-tab="records">
+            Medical Records
+          </button>
+          <button class="tab-button px-4 py-2 font-medium text-gray-500 hover:text-blue-500" data-tab="medications">
+            Medications
+          </button>
+          <button class="tab-button px-4 py-2 font-medium text-gray-500 hover:text-blue-500" data-tab="appointments">
+            Appointments
+          </button>
+          <button class="tab-button px-4 py-2 font-medium text-gray-500 hover:text-blue-500" data-tab="metrics">
+            Health Metrics
+          </button>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content active" id="overview">
+          <!-- Health Metrics Summary -->
+          <div class="mb-8">
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-xl font-semibold">Current Health Metrics</h2>
+              <button class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600">
+                <i class="fas fa-plus mr-1"></i> Add Reading
+              </button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+              <div class="bg-white rounded-lg shadow p-4">
+                <div class="text-sm text-gray-500">Blood Pressure</div>
+                <div class="text-2xl font-bold text-yellow-500 my-2">142/88</div>
+                <div class="text-xs text-gray-400">Today, 8:30 AM</div>
+              </div>
+              <div class="bg-white rounded-lg shadow p-4">
+                <div class="text-sm text-gray-500">Heart Rate</div>
+                <div class="text-2xl font-bold text-green-500 my-2">72</div>
+                <div class="text-xs text-gray-400">Today, 8:30 AM</div>
+              </div>
+              <div class="bg-white rounded-lg shadow p-4">
+                <div class="text-sm text-gray-500">Blood Glucose</div>
+                <div class="text-2xl font-bold text-green-500 my-2">98</div>
+                <div class="text-xs text-gray-400">Yesterday, 7:45 AM</div>
+              </div>
+              <div class="bg-white rounded-lg shadow p-4">
+                <div class="text-sm text-gray-500">Weight</div>
+                <div class="text-2xl font-bold my-2">175 lbs</div>
+                <div class="text-xs text-gray-400">Yesterday, 7:45 AM</div>
+              </div>
+              <div class="bg-white rounded-lg shadow p-4">
+                <div class="text-sm text-gray-500">Temperature</div>
+                <div class="text-2xl font-bold text-green-500 my-2">98.6°F</div>
+                <div class="text-xs text-gray-400">Today, 8:30 AM</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts Section -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+              <div class="flex justify-between items-center mb-4">
+                <h3 class="font-semibold">Blood Pressure Trend</h3>
+                <select class="border rounded px-2 py-1 text-sm">
+                  <option>Last 7 days</option>
+                  <option>Last 30 days</option>
+                  <option>Last 6 months</option>
+                </select>
+              </div>
+              <canvas id="bpChart" height="300"></canvas>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+              <div class="flex justify-between items-center mb-4">
+                <h3 class="font-semibold">Heart Rate Trend</h3>
+                <select class="border rounded px-2 py-1 text-sm">
+                  <option>Last 7 days</option>
+                  <option>Last 30 days</option>
+                  <option>Last 6 months</option>
+                </select>
+              </div>
+              <canvas id="hrChart" height="300"></canvas>
+            </div>
+          </div>
+
+          <!-- Upcoming Appointments -->
+          <div class="mb-8">
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-xl font-semibold">Upcoming Appointments</h2>
+              <button class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600">
+                <i class="fas fa-plus mr-1"></i> Schedule
+              </button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="font-semibold text-lg mb-2">Annual Physical</h3>
+                <p class="text-gray-600 mb-1"><i class="far fa-calendar-alt text-blue-500 mr-2"></i> May 15, 2024 - 10:00 AM</p>
+                <p class="text-gray-600 mb-1"><i class="fas fa-user-md text-blue-500 mr-2"></i> Dr. Sarah Smith</p>
+                <p class="text-gray-600 mb-4"><i class="fas fa-map-marker-alt text-blue-500 mr-2"></i> Main Street Clinic</p>
+                <div class="flex space-x-2">
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-edit mr-1"></i> Reschedule
+                  </button>
+                  <button class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
+                    <i class="fas fa-times mr-1"></i> Cancel
+                  </button>
+                </div>
+              </div>
+              <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="font-semibold text-lg mb-2">Dental Cleaning</h3>
+                <p class="text-gray-600 mb-1"><i class="far fa-calendar-alt text-blue-500 mr-2"></i> June 2, 2024 - 2:30 PM</p>
+                <p class="text-gray-600 mb-1"><i class="fas fa-user-md text-blue-500 mr-2"></i> Dr. Michael Johnson</p>
+                <p class="text-gray-600 mb-4"><i class="fas fa-map-marker-alt text-blue-500 mr-2"></i> Bright Smiles Dentistry</p>
+                <div class="flex space-x-2">
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-edit mr-1"></i> Reschedule
+                  </button>
+                  <button class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
+                    <i class="fas fa-times mr-1"></i> Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Medication Schedule -->
+          <div class="bg-white rounded-lg shadow p-6 mb-8">
+            <div class="flex justify-between items-center mb-6">
+              <h2 class="text-xl font-semibold">Today's Medication Schedule</h2>
+              <button class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600">
+                <i class="fas fa-plus mr-1"></i> Add Medication
+              </button>
+            </div>
+            
+            <div class="mb-6">
+              <div class="flex items-center mb-3">
+                <i class="fas fa-sun text-yellow-500 mr-3 text-xl"></i>
+                <h3 class="font-medium">Morning (8:00 AM)</h3>
+              </div>
+              <div class="pl-10">
+                <div class="bg-green-50 rounded-lg p-3 mb-2 flex items-center">
+                  <i class="fas fa-pills text-blue-500 mr-4 text-xl"></i>
+                  <div class="flex-1">
+                    <div class="font-medium">Lisinopril</div>
+                    <div class="text-sm text-gray-500">10mg tablet</div>
+                  </div>
+                  <button class="text-green-500 hover:text-green-700">
+                    <i class="fas fa-check"></i>
+                  </button>
+                </div>
+                <div class="bg-green-50 rounded-lg p-3 mb-2 flex items-center">
+                  <i class="fas fa-pills text-blue-500 mr-4 text-xl"></i>
+                  <div class="flex-1">
+                    <div class="font-medium">Atorvastatin</div>
+                    <div class="text-sm text-gray-500">20mg tablet</div>
+                  </div>
+                  <button class="text-green-500 hover:text-green-700">
+                    <i class="fas fa-check"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div class="mb-6">
+              <div class="flex items-center mb-3">
+                <i class="fas fa-utensils text-orange-500 mr-3 text-xl"></i>
+                <h3 class="font-medium">Afternoon (12:30 PM)</h3>
+              </div>
+              <div class="pl-10">
+                <div class="bg-white border rounded-lg p-3 mb-2 flex items-center">
+                  <i class="fas fa-pills text-blue-500 mr-4 text-xl"></i>
+                  <div class="flex-1">
+                    <div class="font-medium">Metformin</div>
+                    <div class="text-sm text-gray-500">500mg tablet</div>
+                  </div>
+                  <div class="flex space-x-2">
+                    <button class="text-green-500 hover:text-green-700">
+                      <i class="fas fa-check"></i>
+                    </button>
+                    <button class="text-red-500 hover:text-red-700">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <div class="flex items-center mb-3">
+                <i class="fas fa-moon text-indigo-500 mr-3 text-xl"></i>
+                <h3 class="font-medium">Evening (8:00 PM)</h3>
+              </div>
+              <div class="pl-10">
+                <div class="bg-white border rounded-lg p-3 mb-2 flex items-center">
+                  <i class="fas fa-pills text-blue-500 mr-4 text-xl"></i>
+                  <div class="flex-1">
+                    <div class="font-medium">Lisinopril</div>
+                    <div class="text-sm text-gray-500">10mg tablet</div>
+                  </div>
+                  <div class="flex space-x-2">
+                    <button class="text-green-500 hover:text-green-700">
+                      <i class="fas fa-check"></i>
+                    </button>
+                    <button class="text-red-500 hover:text-red-700">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Medical Records Tab Content -->
+        <div class="tab-content" id="records">
+          <div class="relative mb-6">
+            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            <input type="text" class="w-full pl-10 pr-4 py-2 border rounded-lg" placeholder="Search medical records...">
+          </div>
+          
+          <div class="bg-white rounded-lg shadow p-4 mb-6">
+            <div class="flex flex-col md:flex-row md:space-x-4 space-y-4 md:space-y-0">
+              <div class="flex-1">
+                <label class="block text-gray-700 mb-1">Record Type</label>
+                <select class="w-full border rounded px-3 py-2">
+                  <option>All Types</option>
+                  <option>Lab Results</option>
+                  <option>Doctor Notes</option>
+                  <option>Imaging</option>
+                  <option>Prescriptions</option>
+                </select>
+              </div>
+              <div class="flex-1">
+                <label class="block text-gray-700 mb-1">Date Range</label>
+                <select class="w-full border rounded px-3 py-2">
+                  <option>All Time</option>
+                  <option>Last 30 Days</option>
+                  <option>Last 6 Months</option>
+                  <option>Last Year</option>
+                </select>
+              </div>
+              <div class="flex-1">
+                <label class="block text-gray-700 mb-1">Provider</label>
+                <select class="w-full border rounded px-3 py-2">
+                  <option>All Providers</option>
+                  <option>Dr. Smith</option>
+                  <option>Dr. Johnson</option>
+                  <option>Dr. Williams</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          
+          <div class="bg-white rounded-lg shadow p-4 mb-6">
+            <h3 class="font-semibold mb-3">Export Records</h3>
+            <div class="flex flex-wrap gap-3">
+              <button class="flex items-center bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded">
+                <i class="fas fa-file-pdf text-red-500 mr-2"></i>
+                <span>PDF Report</span>
+              </button>
+              <button class="flex items-center bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded">
+                <i class="fas fa-file-csv text-green-500 mr-2"></i>
+                <span>CSV Data</span>
+              </button>
+              <button class="flex items-center bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded">
+                <i class="fas fa-print text-blue-500 mr-2"></i>
+                <span>Print</span>
+              </button>
+              <button class="flex items-center bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded">
+                <i class="fas fa-share-alt text-purple-500 mr-2"></i>
+                <span>Share</span>
+              </button>
+            </div>
+          </div>
+          
+          <div class="mb-8">
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-xl font-semibold">Lab Results</h2>
+              <button class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600">
+                <i class="fas fa-plus mr-1"></i> Upload
+              </button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="font-semibold text-lg mb-2">Complete Blood Count</h3>
+                <p class="text-gray-600 mb-1"><i class="far fa-calendar-alt text-blue-500 mr-2"></i> May 5, 2024</p>
+                <p class="text-gray-600 mb-1"><i class="fas fa-user-md text-blue-500 mr-2"></i> Main Street Clinic</p>
+                <p class="text-gray-600 mb-4"><i class="fas fa-file-alt text-blue-500 mr-2"></i> Results within normal range</p>
+                <div class="flex space-x-2">
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-eye mr-1"></i> View
+                  </button>
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-download mr-1"></i> Download
+                  </button>
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-share-alt mr-1"></i> Share
+                  </button>
+                </div>
+              </div>
+              <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="font-semibold text-lg mb-2">Lipid Panel</h3>
+                <p class="text-gray-600 mb-1"><i class="far fa-calendar-alt text-blue-500 mr-2"></i> March 15, 2024</p>
+                <p class="text-gray-600 mb-1"><i class="fas fa-user-md text-blue-500 mr-2"></i> Main Street Clinic</p>
+                <p class="text-gray-600 mb-4"><i class="fas fa-file-alt text-blue-500 mr-2"></i> Cholesterol slightly elevated</p>
+                <div class="flex space-x-2">
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-eye mr-1"></i> View
+                  </button>
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-download mr-1"></i> Download
+                  </button>
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-share-alt mr-1"></i> Share
+                  </button>
+                </div>
+              </div>
+              <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="font-semibold text-lg mb-2">Metabolic Panel</h3>
+                <p class="text-gray-600 mb-1"><i class="far fa-calendar-alt text-blue-500 mr-2"></i> January 10, 2024</p>
+                <p class="text-gray-600 mb-1"><i class="fas fa-user-md text-blue-500 mr-2"></i> Main Street Clinic</p>
+                <p class="text-gray-600 mb-4"><i class="fas fa-file-alt text-blue-500 mr-2"></i> Glucose levels normal</p>
+                <div class="flex space-x-2">
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-eye mr-1"></i> View
+                  </button>
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-download mr-1"></i> Download
+                  </button>
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-share-alt mr-1"></i> Share
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mb-8">
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-xl font-semibold">Doctor Notes</h2>
+              <button class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600">
+                <i class="fas fa-plus mr-1"></i> Add Note
+              </button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="font-semibold text-lg mb-2">Annual Physical</h3>
+                <p class="text-gray-600 mb-1"><i class="far fa-calendar-alt text-blue-500 mr-2"></i> April 20, 2024</p>
+                <p class="text-gray-600 mb-1"><i class="fas fa-user-md text-blue-500 mr-2"></i> Dr. Sarah Smith</p>
+                <p class="text-gray-600 mb-4"><i class="fas fa-file-alt text-blue-500 mr-2"></i> Patient in good health, advised to monitor BP</p>
+                <div class="flex space-x-2">
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-eye mr-1"></i> View
+                  </button>
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-download mr-1"></i> Download
+                  </button>
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-share-alt mr-1"></i> Share
+                  </button>
+                  </div>
+              </div>
+              <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="font-semibold text-lg mb-2">Follow-up Visit</h3>
+                <p class="text-gray-600 mb-1"><i class="far fa-calendar-alt text-blue-500 mr-2"></i> February 5, 2024</p>
+                <p class="text-gray-600 mb-1"><i class="fas fa-user-md text-blue-500 mr-2"></i> Dr. Sarah Smith</p>
+                <p class="text-gray-600 mb-4"><i class="fas fa-file-alt text-blue-500 mr-2"></i> BP improved with medication, continue current regimen</p>
+                <div class="flex space-x-2">
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-eye mr-1"></i> View
+                  </button>
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-download mr-1"></i> Download
+                  </button>
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-share-alt mr-1"></i> Share
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Medications Tab Content -->
+        <div class="tab-content" id="medications">
+          <div class="relative mb-6">
+            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            <input type="text" class="w-full pl-10 pr-4 py-2 border rounded-lg" placeholder="Search medications...">
+          </div>
+          
+          <div class="bg-white rounded-lg shadow p-4 mb-6">
+            <div class="flex flex-col md:flex-row md:space-x-4 space-y-4 md:space-y-0">
+              <div class="flex-1">
+                <label class="block text-gray-700 mb-1">Status</label>
+                <select class="w-full border rounded px-3 py-2">
+                  <option>All Medications</option>
+                  <option>Active</option>
+                  <option>Inactive</option>
+                  <option>Refill Needed</option>
+                </select>
+              </div>
+              <div class="flex-1">
+                <label class="block text-gray-700 mb-1">Prescribed By</label>
+                <select class="w-full border rounded px-3 py-2">
+                  <option>All Providers</option>
+                  <option>Dr. Smith</option>
+                  <option>Dr. Johnson</option>
+                </select>
+              </div>
+              <div class="flex-1">
+                <label class="block text-gray-700 mb-1">Pharmacy</label>
+                <select class="w-full border rounded px-3 py-2">
+                  <option>All Pharmacies</option>
+                  <option>CVS</option>
+                  <option>Walgreens</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mb-8">
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-xl font-semibold">Active Medications</h2>
+              <button class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" id="addMedicationBtn">
+                <i class="fas fa-plus mr-1"></i> Add Medication
+              </button>
+            </div>
+            <div class="space-y-4">
+              <div class="bg-white rounded-lg shadow p-6">
+                <h4 class="font-semibold text-lg mb-2">Lisinopril</h4>
+                <p class="text-gray-600 mb-1"><i class="fas fa-info-circle text-blue-500 mr-2"></i> 10mg tablet, Take 1 tablet twice daily</p>
+                <p class="text-gray-600 mb-1"><i class="fas fa-user-md text-blue-500 mr-2"></i> Prescribed by Dr. Sarah Smith on 01/15/2024</p>
+                <p class="text-gray-600 mb-1"><i class="fas fa-pills text-blue-500 mr-2"></i> Last refill: 04/20/2024 (30 tablets)</p>
+                <p class="text-gray-600 mb-4"><i class="fas fa-syringe text-blue-500 mr-2"></i> For: High blood pressure</p>
+                <div class="flex space-x-2">
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-history mr-1"></i> History
+                  </button>
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-edit mr-1"></i> Edit
+                  </button>
+                  <button class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
+                    <i class="fas fa-times mr-1"></i> Discontinue
+                  </button>
+                </div>
+              </div>
+              <div class="bg-white rounded-lg shadow p-6">
+                <h4 class="font-semibold text-lg mb-2">Atorvastatin</h4>
+                <p class="text-gray-600 mb-1"><i class="fas fa-info-circle text-blue-500 mr-2"></i> 20mg tablet, Take 1 tablet at bedtime</p>
+                <p class="text-gray-600 mb-1"><i class="fas fa-user-md text-blue-500 mr-2"></i> Prescribed by Dr. Sarah Smith on 01/15/2024</p>
+                <p class="text-gray-600 mb-1"><i class="fas fa-pills text-blue-500 mr-2"></i> Last refill: 04/20/2024 (30 tablets)</p>
+                <p class="text-gray-600 mb-4"><i class="fas fa-syringe text-blue-500 mr-2"></i> For: High cholesterol</p>
+                <div class="flex space-x-2">
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-history mr-1"></i> History
+                  </button>
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-edit mr-1"></i> Edit
+                  </button>
+                  <button class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
+                    <i class="fas fa-times mr-1"></i> Discontinue
+                  </button>
+                </div>
+              </div>
+              <div class="bg-white rounded-lg shadow p-6">
+                <h4 class="font-semibold text-lg mb-2">Metformin</h4>
+                <p class="text-gray-600 mb-1"><i class="fas fa-info-circle text-blue-500 mr-2"></i> 500mg tablet, Take 1 tablet with lunch and dinner</p>
+                <p class="text-gray-600 mb-1"><i class="fas fa-user-md text-blue-500 mr-2"></i> Prescribed by Dr. Sarah Smith on 03/10/2024</p>
+                <p class="text-gray-600 mb-1"><i class="fas fa-pills text-blue-500 mr-2"></i> Last refill: 04/20/2024 (60 tablets)</p>
+                <p class="text-gray-600 mb-4"><i class="fas fa-syringe text-blue-500 mr-2"></i> For: Type 2 Diabetes</p>
+                <div class="flex space-x-2">
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-history mr-1"></i> History
+                  </button>
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-edit mr-1"></i> Edit
+                  </button>
+                  <button class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
+                    <i class="fas fa-times mr-1"></i> Discontinue
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mb-8">
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-xl font-semibold">Medication History</h2>
+              <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                <i class="fas fa-filter mr-1"></i> Filter
+              </button>
+            </div>
+            <div class="space-y-4">
+              <div class="bg-white rounded-lg shadow p-6">
+                <h4 class="font-semibold text-lg mb-2">Ibuprofen <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded ml-2">Discontinued</span></h4>
+                <p class="text-gray-600 mb-1"><i class="fas fa-info-circle text-blue-500 mr-2"></i> 200mg tablet, Take as needed for pain</p>
+                <p class="text-gray-600 mb-1"><i class="fas fa-user-md text-blue-500 mr-2"></i> Prescribed by Dr. Johnson on 06/15/2023</p>
+                <p class="text-gray-600 mb-1"><i class="fas fa-calendar-times text-blue-500 mr-2"></i> Discontinued on 12/01/2023</p>
+                <p class="text-gray-600"><i class="fas fa-syringe text-blue-500 mr-2"></i> For: Back pain</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Appointments Tab Content -->
+        <div class="tab-content" id="appointments">
+          <div class="relative mb-6">
+            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            <input type="text" class="w-full pl-10 pr-4 py-2 border rounded-lg" placeholder="Search appointments...">
+          </div>
+          
+          <div class="bg-white rounded-lg shadow p-4 mb-6">
+            <div class="flex flex-col md:flex-row md:space-x-4 space-y-4 md:space-y-0">
+              <div class="flex-1">
+                <label class="block text-gray-700 mb-1">Status</label>
+                <select class="w-full border rounded px-3 py-2">
+                  <option>All Appointments</option>
+                  <option>Upcoming</option>
+                  <option>Completed</option>
+                  <option>Cancelled</option>
+                </select>
+              </div>
+              <div class="flex-1">
+                <label class="block text-gray-700 mb-1">Date Range</label>
+                <select class="w-full border rounded px-3 py-2">
+                  <option>Next 30 Days</option>
+                  <option>Next 3 Months</option>
+                  <option>Past 6 Months</option>
+                  <option>Custom Range</option>
+                </select>
+              </div>
+              <div class="flex-1">
+                <label class="block text-gray-700 mb-1">Provider</label>
+                <select class="w-full border rounded px-3 py-2">
+                  <option>All Providers</option>
+                  <option>Dr. Smith</option>
+                  <option>Dr. Johnson</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          
+          <div class="bg-white rounded-lg shadow p-6 mb-8">
+            <div class="text-center py-10">
+              <i class="far fa-calendar-alt text-5xl text-gray-400 mb-4"></i>
+              <p class="text-gray-500">Appointment calendar would appear here</p>
+            </div>
+          </div>
+          
+          <div class="mb-8">
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-xl font-semibold">Upcoming Appointments</h2>
+              <button class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                <i class="fas fa-plus mr-1"></i> Schedule New
+              </button>
+            </div>
+            <div class="space-y-4">
+              <div class="bg-white rounded-lg shadow p-6">
+                <h4 class="font-semibold text-lg mb-2">Annual Physical</h4>
+                <p class="text-gray-600 mb-1"><i class="far fa-calendar-alt text-blue-500 mr-2"></i> May 15, 2024 - 10:00 AM to 10:45 AM</p>
+                <p class="text-gray-600 mb-1"><i class="fas fa-user-md text-blue-500 mr-2"></i> Dr. Sarah Smith, Primary Care</p>
+                <p class="text-gray-600 mb-4"><i class="fas fa-map-marker-alt text-blue-500 mr-2"></i> Main Street Clinic, Exam Room 3</p>
+                <div class="flex flex-wrap gap-2">
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-edit mr-1"></i> Reschedule
+                  </button>
+                  <button class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
+                    <i class="fas fa-times mr-1"></i> Cancel
+                  </button>
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-directions mr-1"></i> Directions
+                  </button>
+                </div>
+              </div>
+              <div class="bg-white rounded-lg shadow p-6">
+                <h4 class="font-semibold text-lg mb-2">Dental Cleaning</h4>
+                <p class="text-gray-600 mb-1"><i class="far fa-calendar-alt text-blue-500 mr-2"></i> June 2, 2024 - 2:30 PM to 3:15 PM</p>
+                <p class="text-gray-600 mb-1"><i class="fas fa-user-md text-blue-500 mr-2"></i> Dr. Michael Johnson, Dentistry</p>
+                <p class="text-gray-600 mb-4"><i class="fas fa-map-marker-alt text-blue-500 mr-2"></i> Bright Smiles Dentistry</p>
+                <div class="flex flex-wrap gap-2">
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-edit mr-1"></i> Reschedule
+                  </button>
+                  <button class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
+                    <i class="fas fa-times mr-1"></i> Cancel
+                  </button>
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-directions mr-1"></i> Directions
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mb-8">
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-xl font-semibold">Past Appointments</h2>
+              <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                <i class="fas fa-filter mr-1"></i> Filter
+              </button>
+            </div>
+            <div class="space-y-4">
+              <div class="bg-white rounded-lg shadow p-6">
+                <h4 class="font-semibold text-lg mb-2">Follow-up Visit</h4>
+                <p class="text-gray-600 mb-1"><i class="far fa-calendar-alt text-blue-500 mr-2"></i> April 20, 2024 - 9:15 AM to 9:45 AM</p>
+                <p class="text-gray-600 mb-1"><i class="fas fa-user-md text-blue-500 mr-2"></i> Dr. Sarah Smith, Primary Care</p>
+                <p class="text-gray-600 mb-4"><i class="fas fa-check-circle text-blue-500 mr-2"></i> Completed</p>
+                <div class="flex flex-wrap gap-2">
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-file-medical mr-1"></i> View Notes
+                  </button>
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-receipt mr-1"></i> View Bill
+                  </button>
+                </div>
+              </div>
+              <div class="bg-white rounded-lg shadow p-6">
+                <h4 class="font-semibold text-lg mb-2">Blood Work</h4>
+                <p class="text-gray-600 mb-1"><i class="far fa-calendar-alt text-blue-500 mr-2"></i> April 5, 2024 - 8:00 AM to 8:15 AM</p>
+                <p class="text-gray-600 mb-1"><i class="fas fa-user-md text-blue-500 mr-2"></i> Main Street Clinic Lab</p>
+                <p class="text-gray-600 mb-4"><i class="fas fa-check-circle text-blue-500 mr-2"></i> Completed</p>
+                <div class="flex flex-wrap gap-2">
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-file-medical mr-1"></i> View Results
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Health Metrics Tab Content -->
+        <div class="tab-content" id="metrics">
+          <div class="relative mb-6">
+            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            <input type="text" class="w-full pl-10 pr-4 py-2 border rounded-lg" placeholder="Search health metrics...">
+          </div>
+          
+          <div class="bg-white rounded-lg shadow p-4 mb-6">
+            <div class="flex flex-col md:flex-row md:space-x-4 space-y-4 md:space-y-0">
+              <div class="flex-1">
+                <label class="block text-gray-700 mb-1">Metric Type</label>
+                <select class="w-full border rounded px-3 py-2">
+                  <option>All Metrics</option>
+                  <option>Blood Pressure</option>
+                  <option>Heart Rate</option>
+                  <option>Blood Glucose</option>
+                  <option>Weight</option>
+                  <option>Temperature</option>
+                </select>
+              </div>
+              <div class="flex-1">
+                <label class="block text-gray-700 mb-1">Date Range</label>
+                <select class="w-full border rounded px-3 py-2">
+                  <option>Last 7 Days</option>
+                  <option>Last 30 Days</option>
+                  <option>Last 6 Months</option>
+                  <option>Custom Range</option>
+                </select>
+              </div>
+              <div class="flex-1">
+                <label class="block text-gray-700 mb-1">Source</label>
+                <select class="w-full border rounded px-3 py-2">
+                  <option>All Sources</option>
+                  <option>Manual Entry</option>
+                  <option>Connected Device</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+              <div class="flex justify-between items-center mb-4">
+                <h3 class="font-semibold">Blood Pressure Trend</h3>
+                <select class="border rounded px-2 py-1 text-sm">
+                  <option>Last 7 days</option>
+                  <option>Last 30 days</option>
+                  <option>Last 6 months</option>
+                </select>
+              </div>
+              <canvas id="bpTrendChart" height="300"></canvas>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+              <div class="flex justify-between items-center mb-4">
+                <h3 class="font-semibold">Blood Glucose Trend</h3>
+                <select class="border rounded px-2 py-1 text-sm">
+                  <option>Last 7 days</option>
+                  <option>Last 30 days</option>
+                  <option>Last 6 months</option>
+                </select>
+              </div>
+              <canvas id="glucoseTrendChart" height="300"></canvas>
+            </div>
+          </div>
+          
+          <div class="mb-8">
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-xl font-semibold">Recent Readings</h2>
+              <button class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                <i class="fas fa-plus mr-1"></i> Add Reading
+              </button>
+            </div>
+            <div class="space-y-4">
+              <div class="bg-white rounded-lg shadow p-6">
+                <h4 class="font-semibold text-lg mb-2">Blood Pressure <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded ml-2">Today</span></h4>
+                <p class="text-gray-600 mb-1"><i class="fas fa-tachometer-alt text-blue-500 mr-2"></i> 142/88 mmHg <span class="text-yellow-500">(Elevated)</span></p>
+                <p class="text-gray-600 mb-1"><i class="far fa-clock text-blue-500 mr-2"></i> 8:30 AM</p>
+                <p class="text-gray-600 mb-4"><i class="fas fa-info-circle text-blue-500 mr-2"></i> Manual entry</p>
+                <div class="flex flex-wrap gap-2">
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-edit mr-1"></i> Edit
+                  </button>
+                  <button class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
+                    <i class="fas fa-trash mr-1"></i> Delete
+                  </button>
+                </div>
+              </div>
+              <div class="bg-white rounded-lg shadow p-6">
+                <h4 class="font-semibold text-lg mb-2">Heart Rate <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded ml-2">Today</span></h4>
+                <p class="text-gray-600 mb-1"><i class="fas fa-heartbeat text-blue-500 mr-2"></i> 72 bpm <span class="text-green-500">(Normal)</span></p>
+                <p class="text-gray-600 mb-1"><i class="far fa-clock text-blue-500 mr-2"></i> 8:30 AM</p>
+                <p class="text-gray-600 mb-4"><i class="fas fa-info-circle text-blue-500 mr-2"></i> Manual entry</p>
+                <div class="flex flex-wrap gap-2">
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-edit mr-1"></i> Edit
+                  </button>
+                  <button class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
+                    <i class="fas fa-trash mr-1"></i> Delete
+                  </button>
+                </div>
+              </div>
+              <div class="bg-white rounded-lg shadow p-6">
+                <h4 class="font-semibold text-lg mb-2">Blood Glucose <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded ml-2">Yesterday</span></h4>
+                <p class="text-gray-600 mb-1"><i class="fas fa-vial text-blue-500 mr-2"></i> 98 mg/dL <span class="text-green-500">(Normal)</span></p>
+                <p class="text-gray-600 mb-1"><i class="far fa-clock text-blue-500 mr-2"></i> 7:45 AM</p>
+                <p class="text-gray-600 mb-4"><i class="fas fa-info-circle text-blue-500 mr-2"></i> Manual entry</p>
+                <div class="flex flex-wrap gap-2">
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-edit mr-1"></i> Edit
+                  </button>
+                  <button class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
+                    <i class="fas fa-trash mr-1"></i> Delete
+                  </button>
+                </div>
+              </div>
+              <div class="bg-white rounded-lg shadow p-6">
+                <h4 class="font-semibold text-lg mb-2">Weight <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded ml-2">Yesterday</span></h4>
+                <p class="text-gray-600 mb-1"><i class="fas fa-weight text-blue-500 mr-2"></i> 175 lbs</p>
+                <p class="text-gray-600 mb-1"><i class="far fa-clock text-blue-500 mr-2"></i> 7:45 AM</p>
+                <p class="text-gray-600 mb-4"><i class="fas fa-info-circle text-blue-500 mr-2"></i> Smart scale sync</p>
+                <div class="flex flex-wrap gap-2">
+                  <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
+                    <i class="fas fa-edit mr-1"></i> Edit
+                  </button>
+                  <button class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
+                    <i class="fas fa-trash mr-1"></i> Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Medication Modal -->
+  <div id="medModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-semibold">Add New Medication</h3>
+        <button id="closeMedModal" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+      </div>
+      <div class="flex border-b mb-4">
+        <button class="form-tab px-4 py-2 font-medium text-blue-500 border-b-2 border-blue-500">Basic Info</button>
+        <button class="form-tab px-4 py-2 font-medium text-gray-500 hover:text-blue-500">Dosage</button>
+        <button class="form-tab px-4 py-2 font-medium text-gray-500 hover:text-blue-500">Reminders</button>
+      </div>
+      
+      <div class="form-content active">
+        <div class="mb-4">
+          <label class="block text-gray-700 mb-1">Medication Name</label>
+          <input type="text" class="w-full border rounded px-3 py-2" placeholder="e.g. Lisinopril">
+        </div>
+        <div class="mb-4">
+          <label class="block text-gray-700 mb-1">Prescribed By</label>
+          <select class="w-full border rounded px-3 py-2">
+            <option>Select Provider</option>
+            <option>Dr. Sarah Smith</option>
+            <option>Dr. Michael Johnson</option>
+            <option>Other Provider</option>
+          </select>
+        </div>
+        <div class="mb-4">
+          <label class="block text-gray-700 mb-1">Purpose</label>
+          <input type="text" class="w-full border rounded px-3 py-2" placeholder="e.g. High blood pressure">
+        </div>
+        <div class="mb-4">
+          <label class="block text-gray-700 mb-1">Pharmacy</label>
+          <select class="w-full border rounded px-3 py-2">
+            <option>Select Pharmacy</option>
+            <option>CVS Pharmacy #1234</option>
+            <option>Walgreens #5678</option>
+            <option>Other Pharmacy</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex justify-end space-x-3 mt-6">
+        <button class="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300">Cancel</button>
+        <button class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Save Medication</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Firebase Configuration
+   const firebaseConfig = {
+        apiKey: "AIzaSyCGelEuSnOm0gy0sMNEwpvqGnQO7gWyEaI",
+        authDomain: "cancer-prediction-8bfbe.firebaseapp.com",
+        projectId: "cancer-prediction-8bfbe",
+        storageBucket: "cancer-prediction-8bfbe.appspot.com",
+        messagingSenderId: "939540065705",
+        appId: "1:939540065705:web:3a049e64c4bb886fdbe8b8",
+        measurementId: "G-4L9ZZSLF0K"
+      };
+
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // DOM Elements
+    const loginModal = document.getElementById('loginModal');
+    const registerModal = document.getElementById('registerModal');
+    const appContainer = document.getElementById('appContainer');
+    const showRegister = document.getElementById('showRegister');
+    const showLogin = document.getElementById('showLogin');
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const welcomeMessage = document.getElementById('welcomeMessage');
+    const toggleSidebar = document.getElementById('toggleSidebar');
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const navLinks = document.querySelectorAll('.nav-link[data-tab]');
+    const addMedicationBtn = document.getElementById('addMedicationBtn');
+    const medModal = document.getElementById('medModal');
+    const closeMedModal = document.getElementById('closeMedModal');
+    const formTabs = document.querySelectorAll('.form-tab');
+    const formContents = document.querySelectorAll('.form-content');
+
+    // Check auth state
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        // User is signed in
+        loginModal.classList.add('hidden');
+        registerModal.classList.add('hidden');
+        appContainer.classList.remove('hidden');
+        
+        // Update UI with user info
+        welcomeMessage.textContent = `Welcome, ${user.displayName || user.email}`;
+        
+        // Load user data from Firestore
+        loadUserData(user.uid);
+      } else {
+        // No user is signed in
+        appContainer.classList.add('hidden');
+        loginModal.classList.remove('hidden');
+      }
+    });
+
+    // Login function
+    loginForm.addEventListener('submit', e => {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      const errorElement = document.getElementById('loginError');
+      
+      auth.signInWithEmailAndPassword(email, password)
+        .then(() => {
+          // Login successful
+          loginModal.classList.add('hidden');
+        })
+        .catch(error => {
+          errorElement.textContent = error.message;
+          errorElement.classList.remove('hidden');
+        });
+    });
+
+    // Register function
+    registerForm.addEventListener('submit', e => {
+      e.preventDefault();
+      const name = document.getElementById('registerName').value;
+      const email = document.getElementById('registerEmail').value;
+      const password = document.getElementById('registerPassword').value;
+      const errorElement = document.getElementById('registerError');
+      
+      auth.createUserWithEmailAndPassword(email, password)
+        .then(cred => {
+          // Add user to Firestore
+          return db.collection('users').doc(cred.user.uid).set({
+            name: name,
+            email: email,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        })
+        .then(() => {
+          // Update user profile
+          return auth.currentUser.updateProfile({
+            displayName: name
+          });
+        })
+        .then(() => {
+          registerModal.classList.add('hidden');
+        })
+        .catch(error => {
+          errorElement.textContent = error.message;
+          errorElement.classList.remove('hidden');
+        });
+    });
+
+    // Logout function
+    logoutBtn.addEventListener('click', () => {
+      auth.signOut();
+    });
+
+    // Toggle between login and register modals
+    showRegister.addEventListener('click', () => {
+      loginModal.classList.add('hidden');
+      registerModal.classList.remove('hidden');
+    });
+
+    showLogin.addEventListener('click', () => {
+      registerModal.classList.add('hidden');
+      loginModal.classList.remove('hidden');
+    });
+
+    // Toggle sidebar
+    toggleSidebar.addEventListener('click', () => {
+      sidebar.classList.toggle('sidebar-collapsed');
+      mainContent.classList.toggle('ml-64');
+      mainContent.classList.toggle('ml-20');
+    });
+
+    // Tab switching
+    tabButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const tabId = button.getAttribute('data-tab');
+        
+        // Remove active class from all tabs and buttons
+        tabButtons.forEach(btn => btn.classList.remove('text-blue-500', 'border-blue-500'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        
+        // Add active class to clicked tab and button
+        button.classList.add('text-blue-500', 'border-blue-500');
+        document.getElementById(tabId).classList.add('active');
+      });
+    });
+
+    // Sidebar navigation
+    navLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const tabId = link.getAttribute('data-tab');
+        
+        // Remove active class from all tabs and buttons
+        tabButtons.forEach(btn => btn.classList.remove('text-blue-500', 'border-blue-500'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        
+        // Add active class to clicked tab and button
+        const correspondingButton = document.querySelector(`.tab-button[data-tab="${tabId}"]`);
+        if (correspondingButton) {
+          correspondingButton.classList.add('text-blue-500', 'border-blue-500');
+        }
+        document.getElementById(tabId).classList.add('active');
+      });
+    });
+
+    // Medication modal
+    addMedicationBtn.addEventListener('click', () => {
+      medModal.classList.remove('hidden');
+    });
+
+    closeMedModal.addEventListener('click', () => {
+      medModal.classList.add('hidden');
+    });
+
+    // Form tabs
+    formTabs.forEach((tab, index) => {
+      tab.addEventListener('click', () => {
+        formTabs.forEach(t => t.classList.remove('text-blue-500', 'border-blue-500'));
+        formContents.forEach(c => c.classList.remove('active'));
+        
+        tab.classList.add('text-blue-500', 'border-blue-500');
+        formContents[index].classList.add('active');
+      });
+    });
+
+    // Load user data from Firestore
+    function loadUserData(userId) {
+      // Load medications
+      db.collection('medications').where('userId', '==', userId)
+        .get()
+        .then(querySnapshot => {
+          const medicationsCount = querySnapshot.size;
+          document.getElementById('medicationsCount').textContent = medicationsCount;
+          
+          // You would update more UI elements here with actual data
+        });
+      
+      // Load appointments
+      db.collection('appointments').where('userId', '==', userId)
+        .get()
+        .then(querySnapshot => {
+          const appointmentsCount = querySnapshot.size;
+          document.getElementById('appointmentsCount').textContent = appointmentsCount;
+          
+          // Find next appointment
+          let nextAppointment = null;
+          querySnapshot.forEach(doc => {
+            const appointment = doc.data();
+            if (!nextAppointment || appointment.date.toDate() < nextAppointment.date.toDate()) {
+              nextAppointment = appointment;
+            }
+          });
+          
+          if (nextAppointment) {
+            document.getElementById('nextAppointment').textContent = 
+              `Next: ${nextAppointment.doctor}, ${nextAppointment.date.toDate().toLocaleDateString()}`;
+          }
+        });
+      
+      // Load other user data similarly...
+    }
+
+    // Initialize charts
+    function initCharts() {
+      // Blood Pressure Chart
+      const bpCtx = document.getElementById('bpChart').getContext('2d');
+      new Chart(bpCtx, {
+        type: 'line',
+        data: {
+          labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+          datasets: [
+            {
+              label: 'Systolic',
+              data: [140, 142, 138, 145, 141, 139, 142],
+              borderColor: '#3B82F6',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              tension: 0.3
+            },
+            {
+              label: 'Diastolic',
+              data: [85, 88, 82, 90, 87, 84, 88],
+              borderColor: '#10B981',
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              tension: 0.3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'top',
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: false
+            }
+          }
+        }
+      });
+
+      // Heart Rate Chart
+      const hrCtx = document.getElementById('hrChart').getContext('2d');
+      new Chart(hrCtx, {
+        type: 'line',
+        data: {
+          labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+          datasets: [{
+            label: 'Heart Rate (bpm)',
+            data: [72, 75, 70, 74, 76, 72, 73],
+            borderColor: '#EF4444',
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'top',
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: false
+            }
+          }
+        }
+      });
+    }
+
+    // Initialize the app
+    document.addEventListener('DOMContentLoaded', () => {
+      initCharts();
+      
+      // Medication taken buttons
+      document.querySelectorAll('.med-action-btn').forEach(button => {
+        button.addEventListener('click', function() {
+          const medicationItem = this.closest('.medication-item');
+          if (this.innerHTML.includes('fa-check')) {
+            medicationItem.classList.remove('bg-white', 'border');
+            medicationItem.classList.add('bg-green-50');
+          } else if (this.innerHTML.includes('fa-times')) {
+            medicationItem.classList.remove('bg-green-50');
+            medicationItem.classList.add('bg-white', 'border');
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>

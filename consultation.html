@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Consultation Booking</title>
+  <!-- Add Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <style>
+    /* Basic Styles */
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #FFFFFF;
+      margin: 0;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      max-width: 900px;
+      margin: auto;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+    
+    /* Header with Logo */
+    .header-section {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+    .header-logo {
+      width: 80px;
+      height: 80px;
+      margin-right: 20px;
+      border-radius: 10px;
+      object-fit: cover;
+    }
+    h1 {
+      color: #4A148C;
+      font-size: 28px;
+      margin: 0;
+    }
+    
+    /* Form Styles */
+    .form-container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+    label {
+      margin-top: 15px;
+      color: #333;
+      font-weight: bold;
+    }
+    input, select {
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background-color: #F8F5FC;
+    }
+    button.book-btn {
+      margin-top: 25px;
+      padding: 12px;
+      background-color: #4A148C;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button.book-btn:hover {
+      background-color: #6A1B9A;
+    }
+    button.book-btn.loading {
+      background-color: #9e9e9e;
+      cursor: not-allowed;
+    }
+    
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      padding-top: 100px;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.4);
+    }
+    .modal-content {
+      background-color: #fff;
+      margin: auto;
+      padding: 25px;
+      width: 80%;
+      max-width: 500px;
+      border-radius: 10px;
+      text-align: center;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .close:hover {
+      color: #333;
+    }
+    
+    /* Error Message */
+    .error-message {
+      color: #d32f2f;
+      font-size: 14px;
+      margin-top: 5px;
+      display: none;
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .header-section {
+        flex-direction: column;
+        text-align: center;
+      }
+      .header-logo {
+        margin-right: 0;
+        margin-bottom: 15px;
+      }
+      .container {
+        padding: 20px;
+      }
+      h1 {
+        font-size: 24px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .header-logo {
+        width: 60px;
+        height: 60px;
+      }
+      h1 {
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Header with Logo and Title -->
+  <div class="header-section">
+    <img src="https://i.pinimg.com/736x/79/76/f3/7976f3898b09b41f39fdf439a45908e7.jpg" alt="Medical Logo" class="header-logo">
+    <h1>Book a Doctor Consultation</h1>
+  </div>
+  
+  <!-- Form Section -->
+  <div class="form-container">
+    <form id="consultationForm">
+      <label for="name">Patient Name:</label>
+      <input type="text" id="name" required>
+
+      <label for="contact">Contact Number:</label>
+      <input type="text" id="contact" required>
+      <div id="contactError" class="error-message">Please enter a valid phone number (10-15 digits)</div>
+
+      <label for="email">Email Address:</label>
+      <input type="email" id="email">
+
+      <label for="doctorSpecialty">Select Doctor Specialty:</label>
+      <select id="doctorSpecialty" required>
+        <option value="">--Select--</option>
+        <option value="Pulmonologist (Lung Cancer)">Pulmonologist (Lung Cancer)</option>
+        <option value="Oncologist (Breast Cancer)">Oncologist (Breast Cancer)</option>
+        <option value="Gastroenterologist (Colon Cancer)">Gastroenterologist (Colon Cancer)</option>
+        <option value="Urologist (Prostate Cancer)">Urologist (Prostate Cancer)</option>
+        <option value="General Surgeon">General Surgeon</option>
+      </select>
+
+      <label for="cancerType">Select Cancer Type:</label>
+      <select id="cancerType" required>
+        <option value="">--Select--</option>
+        <option value="Lung">Lung</option>
+        <option value="Breast">Breast</option>
+        <option value="Skin">Skin</option>
+        <option value="Colon">Colon</option>
+        <option value="Prostate">Prostate</option>
+      </select>
+
+      <label for="cancerStage">Select Cancer Stage:</label>
+      <select id="cancerStage" required>
+        <option value="">--Select--</option>
+        <option value="Stage I">Stage I</option>
+        <option value="Stage II">Stage II</option>
+        <option value="Stage III">Stage III</option>
+        <option value="Stage IV">Stage IV</option>
+      </select>
+
+      <label for="appointmentDate">Select Appointment Date:</label>
+      <input type="date" id="appointmentDate" required>
+
+      <label for="appointmentTime">Preferred Time:</label>
+      <select id="appointmentTime">
+        <option value="">Any time</option>
+        <option value="Morning (9AM-12PM)">Morning (9AM-12PM)</option>
+        <option value="Afternoon (1PM-5PM)">Afternoon (1PM-5PM)</option>
+        <option value="Evening (5PM-8PM)">Evening (5PM-8PM)</option>
+      </select>
+
+      <label for="notes">Additional Notes:</label>
+      <textarea id="notes" rows="3" style="padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 5px; background-color: #F8F5FC;"></textarea>
+
+      <button type="submit" class="book-btn">Book Appointment</button>
+    </form>
+  </div>
+</div>
+
+<!-- Success Modal -->
+<div id="successModal" class="modal">
+  <div class="modal-content">
+    <span id="closeModal" class="close">&times;</span>
+    <h2>🎉 Booking Confirmed!</h2>
+    <p>Your appointment has been successfully booked.</p>
+    <div id="bookingDetails"></div>
+    <p>Our team will contact you shortly to confirm.</p>
+  </div>
+</div>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCGelEuSnOm0gy0sMNEwpvqGnQO7gWyEaI",
+    authDomain: "cancer-prediction-8bfbe.firebaseapp.com",
+    projectId: "cancer-prediction-8bfbe",
+    storageBucket: "cancer-prediction-8bfbe.appspot.com",
+    messagingSenderId: "939540065705",
+    appId: "1:939540065705:web:3a049e64c4bb886fdbe8b8",
+    measurementId: "G-4L9ZZSLF0K"
+  };
+
+  // Initialize Firebase
+  const app = firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  const auth = firebase.auth();
+  const analytics = firebase.analytics();
+
+  // Set minimum date to today
+  document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('appointmentDate').min = today;
+    
+    // Close modal when X is clicked
+    document.getElementById('closeModal').addEventListener('click', function() {
+      document.getElementById('successModal').style.display = 'none';
+    });
+
+    // Close modal when clicking outside
+    window.addEventListener('click', function(event) {
+      if (event.target == document.getElementById('successModal')) {
+        document.getElementById('successModal').style.display = 'none';
+      }
+    });
+
+    // Auto-connect specialty and cancer type
+    document.getElementById('doctorSpecialty').addEventListener('change', function() {
+      const specialtyMap = {
+        "Pulmonologist (Lung Cancer)": "Lung",
+        "Oncologist (Breast Cancer)": "Breast",
+        "Gastroenterologist (Colon Cancer)": "Colon",
+        "Urologist (Prostate Cancer)": "Prostate"
+      };
+      
+      if (specialtyMap[this.value]) {
+        document.getElementById('cancerType').value = specialtyMap[this.value];
+      }
+    });
+
+    // Phone number validation
+    document.getElementById('contact').addEventListener('input', function() {
+      const phoneRegex = /^[0-9]{10,15}$/;
+      const errorElement = document.getElementById('contactError');
+      
+      if (!phoneRegex.test(this.value)) {
+        errorElement.style.display = 'block';
+      } else {
+        errorElement.style.display = 'none';
+      }
+    });
+  });
+
+  // Form submission
+  document.getElementById('consultationForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    // Validate phone number
+    const contact = document.getElementById('contact').value;
+    const phoneRegex = /^[0-9]{10,15}$/;
+    if (!phoneRegex.test(contact)) {
+      document.getElementById('contactError').style.display = 'block';
+      return;
+    }
+
+    // Get form elements
+    const btn = e.target.querySelector('button[type="submit"]');
+    const name = document.getElementById('name').value;
+    const email = document.getElementById('email').value;
+    const doctorSpecialty = document.getElementById('doctorSpecialty').value;
+    const cancerType = document.getElementById('cancerType').value;
+    const cancerStage = document.getElementById('cancerStage').value;
+    const appointmentDate = document.getElementById('appointmentDate').value;
+    const appointmentTime = document.getElementById('appointmentTime').value;
+    const notes = document.getElementById('notes').value;
+
+    // Set loading state
+    btn.classList.add('loading');
+    btn.disabled = true;
+    btn.textContent = 'Booking...';
+
+    // Store in Firestore
+    db.collection("appointments").add({
+      name,
+      contact,
+      email,
+      doctorSpecialty,
+      cancerType,
+      cancerStage,
+      appointmentDate,
+      appointmentTime,
+      notes,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    })
+    .then((docRef) => {
+      // Show success modal with details
+      document.getElementById('successModal').style.display = 'block';
+      document.getElementById('consultationForm').reset();
+      
+      // Display booking details in modal
+      const details = `
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Specialty:</strong> ${doctorSpecialty}</p>
+        <p><strong>Date:</strong> ${new Date(appointmentDate).toLocaleDateString()}</p>
+        ${appointmentTime ? `<p><strong>Preferred Time:</strong> ${appointmentTime}</p>` : ''}
+      `;
+      document.getElementById('bookingDetails').innerHTML = details;
+      
+      // Log to analytics
+      analytics.logEvent('appointment_booked', {
+        cancer_type: cancerType,
+        cancer_stage: cancerStage
+      });
+    })
+    .catch((error) => {
+      alert("Error booking appointment: " + error.message);
+      console.error("Error adding document: ", error);
+    })
+    .finally(() => {
+      // Reset button state
+      btn.classList.remove('loading');
+      btn.disabled = false;
+      btn.textContent = 'Book Appointment';
+    });
+  });
+</script>
+
+</body>
+</html>

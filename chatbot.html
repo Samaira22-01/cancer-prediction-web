@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hope Companion - Cancer Support Chatbot</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Add Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-analytics-compat.js"></script>
+  <style>
+    :root {
+      --primary: #9c27b0;
+      --secondary: #7b1fa2;
+      --accent: #ff5722;
+      --light: #f3e5f5;
+      --dark: #2c3e50;
+      --success: #4caf50;
+      --warning: #ff9800;
+      --info: #2196f3;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    
+    body {
+      background: linear-gradient(-45deg, #f3e5f5, #e8eaf6, #f1f8e9, #e0f7fa);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .chat-container {
+      width: 100%;
+      max-width: 500px;
+      height: 80vh;
+      min-height: 600px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+      backdrop-filter: blur(10px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      transition: all 0.3s ease;
+    }
+    
+    .chat-container:hover {
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+    }
+    
+    .chat-header {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      padding: 20px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 1.3rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      position: relative;
+      z-index: 2;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .chat-header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--accent), #ffeb3b, var(--success), var(--info));
+    }
+    
+    .chat-header img {
+      width: 28px;
+      height: 28px;
+      filter: drop-shadow(0 2px 3px rgba(0,0,0,0.2));
+    }
+    
+    .chat-box {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      background-color: rgba(245, 245, 245, 0.6);
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--primary) transparent;
+    }
+    
+    .chat-box::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .chat-box::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    .chat-box::-webkit-scrollbar-thumb {
+      background-color: var(--primary);
+      border-radius: 20px;
+    }
+    
+    .message {
+      max-width: 85%;
+      padding: 15px 18px;
+      border-radius: 20px;
+      line-height: 1.5;
+      position: relative;
+      animation: fadeIn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      font-size: 15px;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .bot {
+      align-self: flex-start;
+      background: white;
+      color: var(--dark);
+      border-top-left-radius: 5px;
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .bot::before {
+      content: '';
+      position: absolute;
+      left: -8px;
+      top: 15px;
+      width: 0;
+      height: 0;
+      border-top: 8px solid transparent;
+      border-bottom: 8px solid transparent;
+      border-right: 8px solid white;
+      filter: drop-shadow(-2px 0 2px rgba(0,0,0,0.05));
+    }
+    
+    .user {
+      align-self: flex-end;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      border-top-right-radius: 5px;
+    }
+    
+    .user::after {
+      content: '';
+      position: absolute;
+      right: -8px;
+      top: 15px;
+      width: 0;
+      height: 0;
+      border-top: 8px solid transparent;
+      border-bottom: 8px solid transparent;
+      border-left: 8px solid var(--primary);
+    }
+    
+    .input-container {
+      display: flex;
+      padding: 15px;
+      background-color: white;
+      border-top: 1px solid rgba(0,0,0,0.08);
+      position: relative;
+    }
+    
+    #user-input {
+      flex: 1;
+      padding: 15px 20px;
+      border: none;
+      border-radius: 30px;
+      outline: none;
+      font-size: 15px;
+      transition: all 0.3s;
+      background: rgba(245, 245, 245, 0.8);
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    #user-input:focus {
+      background: white;
+      box-shadow: 0 0 0 2px var(--primary);
+    }
+    
+    #send-button {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      margin-left: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+      box-shadow: 0 4px 8px rgba(156, 39, 176, 0.3);
+    }
+    
+    #send-button:hover {
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: 0 6px 12px rgba(156, 39, 176, 0.4);
+    }
+    
+    #send-button:active {
+      transform: translateY(1px);
+    }
+    
+    .typing {
+      display: flex;
+      align-items: center;
+      padding: 12px 18px;
+      background: white;
+      border-radius: 20px;
+      width: fit-content;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .typing::before {
+      content: '';
+      position: absolute;
+      left: -8px;
+      top: 15px;
+      width: 0;
+      height: 0;
+      border-top: 8px solid transparent;
+      border-bottom: 8px solid transparent;
+      border-right: 8px solid white;
+    }
+    
+    .typing-dot {
+      width: 10px;
+      height: 10px;
+      background-color: var(--primary);
+      border-radius: 50%;
+      margin: 0 3px;
+      animation: typingAnimation 1.4s infinite ease-in-out;
+      opacity: 0.7;
+    }
+    
+    @keyframes typingAnimation {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.6; }
+      30% { transform: translateY(-5px); opacity: 1; }
+    }
+    
+    .quick-reply-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    
+    .quick-reply-btn {
+      background: white;
+      border: 1px solid var(--primary);
+      color: var(--primary);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      font-weight: 500;
+    }
+    
+    .quick-reply-btn:hover {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(156, 39, 176, 0.3);
+    }
+    
+    .highlight {
+      color: var(--primary);
+      font-weight: 600;
+    }
+    
+    .info-card {
+      background: white;
+      border-radius: 15px;
+      padding: 15px;
+      margin: 10px 0;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+      border-left: 4px solid var(--primary);
+    }
+    
+    .info-card-title {
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .info-card-content {
+      font-size: 14px;
+      color: var(--dark);
+      line-height: 1.6;
+    }
+    
+    .emoji {
+      font-size: 1.2em;
+      margin: 0 2px;
+      vertical-align: middle;
+    }
+    
+    .divider {
+      text-align: center;
+      margin: 15px 0;
+      position: relative;
+      color: #999;
+      font-size: 12px;
+    }
+    
+    .divider::before, .divider::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 40%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0,0,0,0.1), transparent);
+    }
+    
+    .divider::before {
+      left: 0;
+    }
+    
+    .divider::after {
+      right: 0;
+    }
+    
+    .welcome-message {
+      text-align: center;
+      padding: 15px;
+      background: linear-gradient(135deg, #f5f7fa, #e4e8f0);
+      border-radius: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+    }
+    
+    .welcome-title {
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 8px;
+      font-size: 1.1rem;
+    }
+    
+    .welcome-subtitle {
+      color: #666;
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+    }
+    
+    @media (max-width: 600px) {
+      .chat-container {
+        height: 90vh;
+        min-height: auto;
+        border-radius: 20px;
+      }
+      
+      .message {
+        max-width: 90%;
+        padding: 12px 15px;
+        font-size: 14px;
+      }
+      
+      #user-input {
+        padding: 12px 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="chat-container">
+  <div class="chat-header">
+    <img src="https://img.icons8.com/color/48/000000/cancer-ribbon.png" alt="Cancer Ribbon">
+    Hope Companion
+  </div>
+  
+  <div id="chat-box" class="chat-box"></div>
+
+  <div class="input-container">
+    <input type="text" id="user-input" placeholder="Ask about cancer symptoms, treatments..." />
+    <button id="send-button">
+      <i class="fas fa-paper-plane"></i>
+    </button>
+  </div>
+</div>
+
+<script>
+  // Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyCGelEuSnOm0gy0sMNEwpvqGnQO7gWyEaI",
+    authDomain: "cancer-prediction-8bfbe.firebaseapp.com",
+    projectId: "cancer-prediction-8bfbe",
+    storageBucket: "cancer-prediction-8bfbe.appspot.com",
+    messagingSenderId: "939540065705",
+    appId: "1:939540065705:web:3a049e64c4bb886fdbe8b8",
+    measurementId: "G-4L9ZZSLF0K"
+  };
+
+  // Initialize Firebase
+  const app = firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  const auth = firebase.auth();
+  const analytics = firebase.analytics();
+
+  // Generate a unique ID for this chat session
+  const chatSessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  
+  document.addEventListener('DOMContentLoaded', () => {
+    const chatBox = document.getElementById('chat-box');
+    const userInput = document.getElementById('user-input');
+    const sendButton = document.getElementById('send-button');
+
+    // Track session start
+    logChatEvent('session_start', { session_id: chatSessionId });
+
+    // Show welcome message with animation
+    setTimeout(() => {
+      addWelcomeMessage();
+      setTimeout(() => {
+        addMessage("Hi there! <span class='emoji'>👋</span> I'm Hope, your Cancer Support Companion. How can I assist you today?", "bot");
+        setTimeout(() => {
+          addQuickReplies(["Lung Cancer", "Breast Cancer", "Colon Cancer", "Prostate Cancer"]);
+        }, 800);
+      }, 500);
+    }, 300);
+
+    // Event listeners
+    sendButton.addEventListener('click', sendMessage);
+    userInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+
+    // Add welcome message
+    function addWelcomeMessage() {
+      const welcomeDiv = document.createElement('div');
+      welcomeDiv.className = 'welcome-message';
+      welcomeDiv.innerHTML = `
+        <div class="welcome-title">Welcome to Hope Companion <span class='emoji'>💜</span></div>
+        <div class="welcome-subtitle">Your personal guide for cancer information and support</div>
+      `;
+      chatBox.appendChild(welcomeDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // Send message function
+    function sendMessage() {
+      const input = userInput.value.trim();
+      if (input !== '') {
+        addMessage(input, 'user');
+        logUserMessage(input); // Log user message to Firebase
+        processInput(input.toLowerCase());
+        userInput.value = '';
+      }
+    }
+
+    // Add message to chat
+    function addMessage(message, sender) {
+      const messageElement = document.createElement('div');
+      messageElement.classList.add('message', sender);
+      messageElement.innerHTML = formatMessage(message);
+      chatBox.appendChild(messageElement);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // Format message text
+    function formatMessage(text) {
+      return text.replace(/\n/g, '<br>')
+                 .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                 .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                 .replace(/_(.*?)_/g, '<span style="text-decoration: underline">$1</span>');
+    }
+
+    // Show typing indicator
+    function showTypingEffect(callback) {
+      const typingElement = document.createElement('div');
+      typingElement.classList.add('typing');
+      typingElement.innerHTML = `
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      `;
+      chatBox.appendChild(typingElement);
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      setTimeout(() => {
+        typingElement.remove();
+        callback();
+      }, 1000 + Math.random() * 1000);
+    }
+
+    // Add quick reply buttons
+    function addQuickReplies(replies) {
+      // Remove any existing quick replies first
+      const existingReplies = document.querySelectorAll('.quick-reply-container');
+      existingReplies.forEach(reply => reply.remove());
+      
+      const container = document.createElement('div');
+      container.classList.add('quick-reply-container');
+      
+      replies.forEach(reply => {
+        const button = document.createElement('button');
+        button.classList.add('quick-reply-btn');
+        button.textContent = reply;
+        button.addEventListener('click', () => {
+          // Clear input and set the reply text
+          userInput.value = reply;
+          // Trigger the send message function
+          sendMessage();
+        });
+        container.appendChild(button);
+      });
+      
+      chatBox.appendChild(container);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // Add info card
+    function addInfoCard(title, content) {
+      const card = document.createElement('div');
+      card.className = 'info-card';
+      card.innerHTML = `
+        <div class="info-card-title">
+          <i class="fas fa-info-circle"></i>
+          ${title}
+        </div>
+        <div class="info-card-content">${content}</div>
+      `;
+      chatBox.appendChild(card);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // Log user message to Firebase
+    function logUserMessage(message) {
+      db.collection('chat_logs').add({
+        session_id: chatSessionId,
+        message: message,
+        sender: 'user',
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(error => {
+        console.error("Error logging user message: ", error);
+      });
+    }
+
+    // Log bot response to Firebase
+    function logBotResponse(response) {
+      db.collection('chat_logs').add({
+        session_id: chatSessionId,
+        message: response,
+        sender: 'bot',
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(error => {
+        console.error("Error logging bot response: ", error);
+      });
+    }
+
+    // Log chat events to Firebase
+    function logChatEvent(eventType, eventData = {}) {
+      const eventDataWithSession = {
+        ...eventData,
+        session_id: chatSessionId,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      
+      // Log to Firestore
+      db.collection('chat_events').add({
+        event_type: eventType,
+        ...eventDataWithSession
+      }).catch(error => {
+        console.error("Error logging chat event: ", error);
+      });
+      
+      // Log to Analytics
+      analytics.logEvent(eventType, eventDataWithSession);
+    }
+
+    // Process user input
+    function processInput(input) {
+      showTypingEffect(() => {
+        let response = '';
+        let quickReplies = [];
+        
+        if (input.includes('thank') || input.includes('thanks') || input.includes('thankyou')) {
+          response = "You're most welcome! <span class='emoji'>🌸</span> Stay strong and keep shining. Remember, you're not alone in this journey. We're always here for you! <span class='emoji'>✨</span>";
+          quickReplies = ["Lung Cancer", "Breast Cancer", "Colon Cancer", "Prostate Cancer"];
+        }
+        else if (input.includes('lung cancer') || input === 'lung' || input.includes('lung')) {
+          response = `
+            <strong>Lung Cancer Information</strong> <span class='emoji'>🌿</span><br><br>
+            <div class="info-card">
+              <div class="info-card-title">
+                <i class="fas fa-lungs"></i>
+                About Lung Cancer
+              </div>
+              <div class="info-card-content">
+                Lung cancer begins in the lungs and is often caused by smoking, but can occur in non-smokers too. Early detection improves outcomes significantly.
+              </div>
+            </div>
+            <strong>What would you like to know?</strong><br>
+            <span class='emoji'>1️⃣</span> Symptoms & Early Signs<br>
+            <span class='emoji'>2️⃣</span> Treatment Options<br>
+            <span class='emoji'>3️⃣</span> Prevention Methods<br>
+            <span class='emoji'>4️⃣</span> Risk Factors<br><br>
+            Type the number or ask your specific question.
+          `;
+          quickReplies = ["Symptoms", "Treatments", "Prevention", "Risk Factors"];
+          logChatEvent('lung_cancer_inquiry');
+        }
+        else if (input.includes('breast cancer') || input === 'breast' || input.includes('breast')) {
+          response = `
+            <strong>Breast Cancer Information</strong> <span class='emoji'>🌸</span><br><br>
+            <div class="info-card">
+              <div class="info-card-title">
+                <i class="fas fa-ribbon"></i>
+                About Breast Cancer
+              </div>
+              <div class="info-card-content">
+                Breast cancer develops from breast tissue and affects both women and men. Regular self-exams and mammograms can help detect it early.
+              </div>
+            </div>
+            <strong>What information do you need?</strong><br>
+            <span class='emoji'>1️⃣</span> Early Signs & Symptoms<br>
+            <span class='emoji'>2️⃣</span> Latest Treatments<br>
+            <span class='emoji'>3️⃣</span> Survival Statistics<br>
+            <span class='emoji'>4️⃣</span> Genetic Risk Factors<br><br>
+            Type the number or ask specifically.
+          `;
+          quickReplies = ["Symptoms", "Treatments", "Survival Rates", "Genetic Risks"];
+          logChatEvent('breast_cancer_inquiry');
+        }
+        else if (input.includes('colon cancer') || input === 'colon' || input.includes('colon')) {
+          response = `
+            <strong>Colon Cancer Information</strong> <span class='emoji'>🌼</span><br><br>
+            <div class="info-card">
+              <div class="info-card-title">
+                <i class="fas fa-poop"></i>
+                About Colon Cancer
+              </div>
+              <div class="info-card-content">
+                Colon cancer affects the large intestine and often begins as small polyps. Regular screening after age 45 is recommended for early detection.
+              </div>
+            </div>
+            <strong>Select an option:</strong><br>
+            <span class='emoji'>1️⃣</span> Warning Signs<br>
+            <span class='emoji'>2️⃣</span> Treatment Approaches<br>
+            <span class='emoji'>3️⃣</span> Screening Methods<br>
+            <span class='emoji'>4️⃣</span> Dietary Prevention<br><br>
+            Type the number or your specific question.
+          `;
+          quickReplies = ["Warning Signs", "Treatments", "Screening", "Prevention"];
+          logChatEvent('colon_cancer_inquiry');
+        }
+        else if (input.includes('prostate cancer') || input === 'prostate' || input.includes('prostate')) {
+          response = `
+            <strong>Prostate Cancer Information</strong> <span class='emoji'>🌟</span><br><br>
+            <div class="info-card">
+              <div class="info-card-title">
+                <i class="fas fa-male"></i>
+                About Prostate Cancer
+              </div>
+              <div class="info-card-content">
+                Prostate cancer develops in the prostate gland in men. It's often slow-growing but can be aggressive in some cases. Regular PSA tests help with early detection.
+              </div>
+            </div>
+            <strong>What would you like information about?</strong><br>
+            <span class='emoji'>1️⃣</span> Common Symptoms<br>
+            <span class='emoji'>2️⃣</span> Treatment Options<br>
+            <span class='emoji'>3️⃣</span> Early Detection<br>
+            <span class='emoji'>4️⃣</span> Risk Factors<br><br>
+            Type the number or ask your question directly.
+          `;
+          quickReplies = ["Symptoms", "Treatments", "Early Detection", "Risk Factors"];
+          logChatEvent('prostate_cancer_inquiry');
+        }
+        else if (['1', 'symptoms', 'symptom', 'signs'].includes(input)) {
+          response = `
+            <strong>Common Cancer Symptoms</strong> <span class='emoji'>💬</span><br><br>
+            <div class="info-card">
+              <div class="info-card-title">
+                <i class="fas fa-exclamation-triangle"></i>
+                Warning Signs
+              </div>
+              <div class="info-card-content">
+                • Unusual lumps or swelling that doesn't go away<br>
+                • Persistent cough or hoarseness (3+ weeks)<br>
+                • Changes in bowel/bladder habits<br>
+                • Unexplained weight loss (more than 5kg)<br>
+                • Fatigue that doesn't improve with rest<br>
+                • Persistent pain without apparent cause<br>
+                • Skin changes (new moles or changes to existing ones)
+              </div>
+            </div>
+            <em>Remember:</em> These symptoms can have many causes besides cancer. Always consult a doctor for proper diagnosis.
+          `;
+          logChatEvent('symptoms_inquiry');
+        }
+        else if (['2', 'treatment', 'treatments'].includes(input)) {
+          response = `
+            <strong>Cancer Treatment Options</strong> <span class='emoji'>🎯</span><br><br>
+            <div class="info-card">
+              <div class="info-card-title">
+                <i class="fas fa-medkit"></i>
+                Modern Treatments
+              </div>
+              <div class="info-card-content">
+                <span class="highlight">• Surgery:</span> Removing cancerous tissue<br>
+                <span class="highlight">• Chemotherapy:</span> Using drugs to kill cancer cells<br>
+                <span class="highlight">• Radiation therapy:</span> Using high-energy rays<br>
+                <span class="highlight">• Immunotherapy:</span> Boosting your immune system<br>
+                <span class="highlight">• Targeted therapy:</span> Attacking specific cancer cells<br>
+                <span class="highlight">• Hormone therapy:</span> For hormone-sensitive cancers<br>
+                <span class="highlight">• Stem cell transplant:</span> For blood-related cancers
+              </div>
+            </div>
+            Treatment plans are personalized based on cancer type, stage, and your overall health.
+          `;
+          logChatEvent('treatments_inquiry');
+        }
+        else if (['3', 'prevent', 'prevention', 'cure', 'prevent'].includes(input)) {
+          response = `
+            <strong>Cancer Prevention & Early Detection</strong> <span class='emoji'>🌟</span><br><br>
+            <div class="info-card">
+              <div class="info-card-title">
+                <i class="fas fa-shield-alt"></i>
+                Prevention Strategies
+              </div>
+              <div class="info-card-content">
+                • <span class="highlight">Regular screenings</span> (mammograms, colonoscopies, etc.)<br>
+                • <span class="highlight">Healthy diet</span> rich in fruits/vegetables<br>
+                • <span class="highlight">Regular physical activity</span> (150 mins/week)<br>
+                • <span class="highlight">Avoid tobacco</span> in all forms<br>
+                • <span class="highlight">Limit alcohol</span> consumption<br>
+                • <span class="highlight">Sun protection</span> to prevent skin cancer<br>
+                • <span class="highlight">Vaccinations</span> (HPV, Hepatitis B)<br>
+                • <span class="highlight">Know your family history</span>
+              </div>
+            </div>
+            <em>Good news:</em> Many cancers are treatable when caught early! Survival rates have improved significantly in recent years.
+          `;
+          logChatEvent('prevention_inquiry');
+        }
+        else if (['4', 'how it happens', 'causes', 'risk factors'].includes(input)) {
+          response = `
+            <strong>How Cancer Develops</strong> <span class='emoji'>🔬</span><br><br>
+            <div class="info-card">
+              <div class="info-card-title">
+                <i class="fas fa-dna"></i>
+                Causes & Risk Factors
+              </div>
+              <div class="info-card-content">
+                Cancer develops when genetic mutations cause cells to grow uncontrollably due to:<br><br>
+                • <span class="highlight">Lifestyle factors:</span> Smoking, alcohol, poor diet, lack of exercise<br>
+                • <span class="highlight">Environmental exposures:</span> Radiation, chemicals, air pollution<br>
+                • <span class="highlight">Infections:</span> HPV, Hepatitis B/C, H. pylori<br>
+                • <span class="highlight">Genetic factors:</span> Family history, inherited mutations (BRCA, etc.)<br>
+                • <span class="highlight">Age:</span> Risk increases with age<br>
+                • <span class="highlight">Chronic inflammation:</span> Long-term irritation/inflammation
+              </div>
+            </div>
+            It's often a combination of factors rather than one single cause.
+          `;
+          logChatEvent('risk_factors_inquiry');
+        }
+        else if (input.includes('genetic') || input.includes('brca') || input.includes('inherited') || input.includes('family history')) {
+          response = `
+            <strong>Genetic Risk Factors for Cancer</strong> <span class='emoji'>🧬</span><br><br>
+            <div class="info-card">
+              <div class="info-card-title">
+                <i class="fas fa-dna"></i>
+                Understanding Genetic Risks
+              </div>
+              <div class="info-card-content">
+                <strong>Key points about genetic cancer risks:</strong><br><br>
+                • About 5-10% of cancers are linked to inherited genetic mutations<br>
+                • <span class="highlight">BRCA1/BRCA2</span> mutations increase breast/ovarian cancer risk<br>
+                • <span class="highlight">Lynch syndrome</span> increases colon/endometrial cancer risk<br>
+                • <span class="highlight">Familial adenomatous polyposis (FAP)</span> increases colon cancer risk<br>
+                • <span class="highlight">Li-Fraumeni syndrome</span> increases multiple cancer risks<br><br>
+                <strong>When to consider genetic testing:</strong><br>
+                - Multiple family members with same cancer type<br>
+                - Cancer at unusually young ages (<50)<br>
+                - Rare cancers in family (ovarian, pancreatic)<br>
+                - Multiple cancers in one person<br><br>
+                Genetic counseling can help assess your risk and guide testing decisions.
+              </div>
+            </div>
+            Would you like information about specific genetic tests or counseling?
+          `;
+          quickReplies = ["BRCA Testing", "Lynch Syndrome", "Genetic Counseling", "Family Risk Assessment"];
+          logChatEvent('genetic_risks_inquiry');
+        }
+        else if (input.includes('help') || input === 'h') {
+          response = `
+            <strong>How I Can Help You</strong> <span class='emoji'>💡</span><br><br>
+            I can provide information about:<br><br>
+            <span class='emoji'>🔹</span> <span class="highlight">Specific cancers:</span> lung, breast, colon, prostate, etc.<br>
+            <span class='emoji'>🔹</span> <span class="highlight">Symptoms</span> to watch for<br>
+            <span class='emoji'>🔹</span> <span class="highlight">Treatment options</span> and new therapies<br>
+            <span class='emoji'>🔹</span> <span class="highlight">Prevention strategies</span> and screening<br>
+            <span class='emoji'>🔹</span> <span class="highlight">Risk factors</span> and causes<br>
+            <span class='emoji'>🔹</span> <span class="highlight">Genetic risks</span> and family history<br><br>
+            Try asking:<br>
+            • "What are breast cancer symptoms?"<br>
+            • "How is lung cancer treated?"<br>
+            • "Can colon cancer be prevented?"<br>
+            • "What are genetic risk factors?"<br>
+            • Or select from the quick replies below
+          `;
+          quickReplies = ["Lung Cancer", "Breast Cancer", "Colon Cancer", "Genetic Risks"];
+          logChatEvent('help_request');
+        }
+        else {
+          response = `
+            <div class="info-card">
+              <div class="info-card-title">
+                <i class="fas fa-question-circle"></i>
+                I Didn't Understand
+              </div>
+              <div class="info-card-content">
+                I'm sorry, I couldn't understand your question. Please try asking about:<br><br>
+                • Specific cancer types (lung, breast, colon, etc.)<br>
+                • Symptoms, treatments, or prevention<br>
+                • Genetic risks and family history<br>
+                • Or type "help" for guidance<br><br>
+                Here are some examples:<br>
+                • "What are prostate cancer symptoms?"<br>
+                • "How is breast cancer treated?"<br>
+                • "Can lung cancer be prevented?"<br>
+                • "What are genetic risk factors for cancer?"
+              </div>
+            </div>
+          `;
+          quickReplies = ["Help", "Lung Cancer", "Breast Cancer", "Genetic Risks"];
+          logChatEvent('unrecognized_input', { input: input });
+        }
+        
+        // Add the bot's response
+        addMessage(response, 'bot');
+        logBotResponse(response); // Log bot response to Firebase
+        
+        // Add quick replies if any
+        if (quickReplies.length > 0) {
+          setTimeout(() => {
+            addQuickReplies(quickReplies);
+          }, 300);
+        }
+      });
+    }
+  });
+</script>
+</body>
+</html>
