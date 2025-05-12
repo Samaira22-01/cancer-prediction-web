@@ -109,7 +109,7 @@
         await sendEmailVerification(userCredential.user);
 
         alert("Registration successful! Please check your email for verification.");
-        window.location.href = "login.html";  // Redirect to login page after registration
+        window.location.href = "index.html";  // Redirect to login page after registration
       } catch (error) {
         let msg = "Registration failed. Please try again.";
         switch (error.code) {
