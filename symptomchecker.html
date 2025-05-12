@@ -1,0 +1,1164 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cancer Symptoms Checker</title>
+  <!-- Add Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f8f5ff;
+      color: #333;
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 5px 25px rgba(0,0,0,0.08);
+    }
+    
+    .header-section {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    .header-logo {
+      width: 80px;
+      height: 80px;
+      border-radius: 12px;
+      object-fit: contain;
+    }
+    
+    h1, h2, h3 {
+      color: #4A148C;
+      margin-top: 0;
+    }
+    
+    h1 {
+      font-size: 32px;
+      text-align: center;
+    }
+    
+    .disclaimer {
+      background-color: #FFF3E0;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border-left: 4px solid #E65100;
+    }
+    
+    .disclaimer strong {
+      color: #E65100;
+    }
+    
+    .privacy-policy {
+      font-size: 0.9em;
+      color: #666;
+      margin-top: 30px;
+      padding-top: 15px;
+      border-top: 1px solid #eee;
+    }
+    
+    .language-toggle {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .language-btn {
+      background: none;
+      border: none;
+      color: #6A1B9A;
+      font-weight: bold;
+      cursor: pointer;
+      padding: 5px 10px;
+      margin: 0 5px;
+    }
+    
+    .language-btn.active {
+      border-bottom: 2px solid #6A1B9A;
+    }
+    
+    #symptomForm {
+      margin-top: 20px;
+    }
+    
+    .question-container {
+      margin-bottom: 25px;
+      padding: 20px;
+      background-color: #f9f4ff;
+      border-radius: 10px;
+    }
+    
+    .question-container h3 {
+      margin-top: 0;
+    }
+    
+    .options-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    input[type="radio"], input[type="checkbox"] {
+      accent-color: #6A1B9A;
+      width: 18px;
+      height: 18px;
+    }
+    
+    button {
+      background-color: #6A1B9A;
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 15px 0;
+      transition: all 0.3s;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    button:hover {
+      background-color: #4A148C;
+      transform: translateY(-2px);
+    }
+    
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    
+    .result {
+      background-color: #f9f4ff;
+      padding: 20px;
+      border-radius: 10px;
+      margin-top: 30px;
+    }
+    
+    .result-item {
+      margin-bottom: 15px;
+    }
+    
+    .result-label {
+      font-weight: bold;
+      color: #4A148C;
+    }
+    
+    .cancer-type {
+      padding: 8px 12px;
+      border-radius: 5px;
+      font-weight: bold;
+    }
+    
+    .confidence-meter {
+      height: 10px;
+      background-color: #e0e0e0;
+      border-radius: 5px;
+      margin-top: 5px;
+      overflow: hidden;
+    }
+    
+    .confidence-level {
+      height: 100%;
+      background-color: #4CAF50;
+      width: 0%;
+      transition: width 0.5s ease;
+    }
+    
+    .lung-cancer {
+      background-color: #E3F2FD;
+      color: #0D47A1;
+    }
+    
+    .breast-cancer {
+      background-color: #F3E5F5;
+      color: #6A1B9A;
+    }
+    
+    .colon-cancer {
+      background-color: #E8F5E9;
+      color: #1B5E20;
+    }
+    
+    .prostate-cancer {
+      background-color: #E1F5FE;
+      color: #01579B;
+    }
+    
+    .skin-cancer {
+      background-color: #FFF8E1;
+      color: #FF6F00;
+    }
+    
+    .other-cancer {
+      background-color: #FFF3E0;
+      color: #E65100;
+    }
+    
+    .gender-selection {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    
+    .gender-btn {
+      padding: 10px 20px;
+      border: 2px solid #6A1B9A;
+      border-radius: 8px;
+      background: white;
+      color: #6A1B9A;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .gender-btn.selected {
+      background: #6A1B9A;
+      color: white;
+    }
+    
+    .gender-btn:hover {
+      background: #f3e5f5;
+    }
+    
+    .consent-checkbox {
+      margin: 20px 0;
+    }
+    
+    @media (max-width: 768px) {
+      .header-section {
+        flex-direction: column;
+        text-align: center;
+      }
+      
+      .container {
+        padding: 20px;
+      }
+      
+      h1 {
+        font-size: 28px;
+      }
+      
+      .button-group {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header-section">
+    <img src="https://img.icons8.com/color/96/000000/cancer-ribbon.png" alt="Cancer Ribbon Logo" class="header-logo">
+    <h1>Cancer Symptoms Checker</h1>
+  </div>
+
+  <div class="disclaimer">
+    <strong>Important Disclaimer:</strong> This tool is not a substitute for professional medical advice, diagnosis, or treatment. 
+    It provides general information based on your symptoms but cannot consider all individual factors. 
+    Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition.
+  </div>
+
+  <div id="introScreen">
+    <h2>About This Assessment</h2>
+    <p>This questionnaire will ask you about symptoms you may be experiencing. Based on your answers, it will provide information about possible cancer types that may need further evaluation by a healthcare professional.</p>
+    
+    <div class="gender-selection">
+      <button class="gender-btn" id="maleBtn">Male</button>
+      <button class="gender-btn" id="femaleBtn">Female</button>
+    </div>
+    
+    <div class="consent-checkbox">
+      <label class="option">
+        <input type="checkbox" id="consentCheckbox">
+        I understand this is not a diagnosis and I consent to my anonymous responses being used to improve this tool
+      </label>
+    </div>
+    
+    <button id="startBtn" disabled>Start Assessment</button>
+    
+    <div class="privacy-policy">
+      <p><strong>Privacy Policy:</strong> Your responses are stored anonymously to help improve this tool. No personally identifiable information is collected. You can read our full privacy policy <a href="#" id="privacyLink">here</a>.</p>
+    </div>
+  </div>
+
+  <div id="assessmentScreen" style="display: none;">
+    <div class="language-toggle">
+      <button class="language-btn active" id="englishBtn">English</button>
+      <button class="language-btn" id="hindiBtn">हिंदी</button>
+    </div>
+
+    <form id="symptomForm"></form>
+
+    <div class="button-group">
+      <button id="prevBtn" style="display: none;">Previous</button>
+      <button id="nextBtn" disabled>Next</button>
+      <button id="submitBtn" style="display: none;">Submit</button>
+    </div>
+  </div>
+
+  <div id="result" class="result" style="display: none;">
+    <h3>Your Symptom Assessment</h3>
+    
+    <div class="result-item">
+      <span class="result-label">Possible Cancer Type:</span>
+      <span id="cancerType"></span>
+      <div class="confidence-meter">
+        <div class="confidence-level" id="confidenceBar"></div>
+      </div>
+      <span id="confidenceText" style="font-size: 0.9em; color: #666;"></span>
+    </div>
+    
+    <div class="result-item">
+      <span class="result-label">Possible Stage:</span>
+      <span id="cancerStage"></span>
+    </div>
+    
+    <div class="result-item">
+      <span class="result-label">Recommended Specialist:</span>
+      <span id="recommendedDoctor"></span>
+    </div>
+    
+    <div class="result-item">
+      <span class="result-label">Recommended Tests:</span>
+      <span id="recommendedTests"></span>
+    </div>
+    
+    <div class="result-item">
+      <span class="result-label">Next Steps:</span>
+      <span id="nextSteps"></span>
+    </div>
+    
+    <div class="result-item">
+      <span class="result-label">When to Seek Immediate Care:</span>
+      <span id="emergencyInfo"></span>
+    </div>
+    
+    <div class="disclaimer">
+      <strong>Remember:</strong> This is not a medical diagnosis. Only a healthcare professional can properly evaluate your symptoms. 
+      If you're experiencing severe symptoms like difficulty breathing, severe pain, or uncontrolled bleeding, seek emergency care immediately.
+    </div>
+    
+    <div class="button-group">
+      <button id="restartBtn">Restart Assessment</button>
+    </div>
+  </div>
+</div>
+
+<div id="privacyModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+  <div style="background: white; padding: 30px; border-radius: 10px; max-width: 800px; max-height: 80vh; overflow-y: auto;">
+    <h2>Privacy Policy</h2>
+    <p><strong>Last Updated:</strong> [Date]</p>
+    
+    <h3>Information We Collect</h3>
+    <p>This tool collects anonymous responses to the symptom questions for the purpose of improving the assessment algorithm. No personally identifiable information is collected unless you voluntarily provide it through the "Find Specialists Near Me" feature.</p>
+    
+    <h3>How We Use Information</h3>
+    <p>Your anonymous responses are used to:</p>
+    <ul>
+      <li>Calculate potential cancer risk based on symptoms</li>
+      <li>Improve the accuracy of the assessment tool</li>
+      <li>Analyze common symptom patterns</li>
+    </ul>
+    
+    <h3>Data Security</h3>
+    <p>All data is stored securely using Firebase services with appropriate security measures in place. Your responses cannot be traced back to you as an individual.</p>
+    
+    <h3>Third-Party Services</h3>
+    <p>We use Google Maps API for the "Find Specialists Near Me" feature, which may collect location data according to Google's privacy policy.</p>
+    
+    <h3>Your Choices</h3>
+    <p>You may choose not to consent to data collection by not checking the consent box, though this will prevent you from using the assessment tool.</p>
+    
+    <button id="closePrivacyBtn" style="margin-top: 20px;">Close</button>
+  </div>
+</div>
+
+<script>
+  // Initialize Firebase with your config
+  const firebaseConfig = {
+    apiKey: "AIzaSyCGelEuSnOm0gy0sMNEwpvqGnQO7gWyEaI",
+    authDomain: "cancer-prediction-8bfbe.firebaseapp.com",
+    projectId: "cancer-prediction-8bfbe",
+    storageBucket: "cancer-prediction-8bfbe.appspot.com",
+    messagingSenderId: "939540065705",
+    appId: "1:939540065705:web:3a049e64c4bb886fdbe8b8",
+    measurementId: "G-4L9ZZSLF0K"
+  };
+
+  // Initialize Firebase
+  const app = firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  const auth = firebase.auth();
+  const analytics = firebase.analytics();
+
+  // Enhanced questions with gender-specific options
+  const questions = {
+    english: [
+      {
+        question: "1. Which symptoms are you experiencing? (Select all that apply)",
+        options: [
+          "Persistent cough (3+ weeks)",
+          "Unexplained weight loss (more than 5kg in a month)",
+          "Extreme fatigue that doesn't improve with rest",
+          "Unusual lumps or swelling (especially in breast/testicles/lymph nodes)",
+          "Persistent pain without apparent cause",
+          "Difficulty swallowing",
+          "Persistent indigestion or heartburn",
+          "Changes in bowel or bladder habits"
+        ],
+        type: "checkbox"
+      },
+      {
+        question: "2. How long have you had these symptoms?",
+        options: [
+          "Less than a month",
+          "1-3 months",
+          "3-6 months",
+          "More than 6 months"
+        ],
+        type: "radio"
+      },
+      {
+        question: "3. Have you noticed any changes in your bowel habits?",
+        options: [
+          "Persistent diarrhea or constipation",
+          "Blood in stool (bright red or very dark)",
+          "Feeling that bowel doesn't empty completely",
+          "No changes in bowel habits"
+        ],
+        type: "radio"
+      },
+      {
+        question: "4. Any breathing difficulties or chest symptoms?",
+        options: [
+          "Persistent shortness of breath",
+          "Coughing up blood",
+          "Chest pain that worsens with deep breathing",
+          "No breathing/chest symptoms"
+        ],
+        type: "radio"
+      },
+      {
+        question: "5. Any changes in urinary habits?",
+        options: [
+          "Blood in urine",
+          "Frequent urination (especially at night)",
+          "Weak urine flow or difficulty urinating",
+          "No urinary changes"
+        ],
+        type: "radio"
+      },
+      {
+        question: "6. For women: Any breast changes?",
+        options: [
+          "New lump in breast or underarm",
+          "Nipple discharge (especially bloody)",
+          "Changes in breast skin texture/dimpling",
+          "Not applicable/No changes"
+        ],
+        type: "radio",
+        gender: "female"
+      },
+      {
+        question: "6. For men: Any testicular changes?",
+        options: [
+          "New lump or enlargement in testicle",
+          "Heaviness or discomfort in scrotum",
+          "Changes in testicular size or firmness",
+          "Not applicable/No changes"
+        ],
+        type: "radio",
+        gender: "male"
+      },
+      {
+        question: "7. Have you noticed any skin changes?",
+        options: [
+          "New mole or change in existing mole (size, color, shape)",
+          "Yellowing of skin or eyes (jaundice)",
+          "Persistent skin sores that don't heal",
+          "No skin changes"
+        ],
+        type: "radio"
+      },
+      {
+        question: "8. Any family history of cancer?",
+        options: [
+          "Yes, immediate family (parents/siblings/children)",
+          "Yes, extended family (grandparents, aunts/uncles)",
+          "Not that I know of",
+          "Unsure"
+        ],
+        type: "radio"
+      },
+      {
+        question: "9. Do you smoke or use tobacco products?",
+        options: [
+          "Current smoker",
+          "Former smoker (quit within last 10 years)",
+          "Never smoked",
+          "Use other tobacco products (chewing tobacco, snuff, etc.)"
+        ],
+        type: "radio"
+      },
+      {
+        question: "10. What is your age group?",
+        options: [
+          "Under 40",
+          "40-60 years",
+          "60-75 years",
+          "Over 75 years"
+        ],
+        type: "radio"
+      },
+      {
+        question: "11. How would you describe your alcohol consumption?",
+        options: [
+          "Regular heavy drinker (more than 3 drinks/day)",
+          "Regular moderate drinker (1-2 drinks/day)",
+          "Occasional drinker",
+          "Never or rarely drink"
+        ],
+        type: "radio"
+      },
+      {
+        question: "12. Have you been exposed to any known carcinogens?",
+        options: [
+          "Occupational exposure (asbestos, chemicals, radiation)",
+          "Significant sun exposure without protection",
+          "No known exposure",
+          "Unsure"
+        ],
+        type: "radio"
+      }
+    ],
+    hindi: [
+      {
+        question: "1. आपको कौन से लक्षण अनुभव हो रहे हैं? (सभी लागू विकल्प चुनें)",
+        options: [
+          "लगातार खांसी (3 सप्ताह से अधिक)",
+          "बिना कारण वजन कम होना (एक महीने में 5 किलो से अधिक)",
+          "अत्यधिक थकान जो आराम से ठीक नहीं होती",
+          "असामान्य गांठ या सूजन (विशेषकर स्तन/अंडकोष/लिम्फ नोड्स में)",
+          "बिना स्पष्ट कारण के लगातार दर्द",
+          "निगलने में कठिनाई",
+          "लगातार अपच या सीने में जलन",
+          "मल या मूत्र त्याग की आदतों में बदलाव"
+        ],
+        type: "checkbox"
+      },
+      {
+        question: "2. आपको ये लक्षण कितने समय से हैं?",
+        options: [
+          "एक महीने से कम",
+          "1-3 महीने",
+          "3-6 महीने",
+          "6 महीने से अधिक"
+        ],
+        type: "radio"
+      },
+      {
+        question: "3. क्या आपने अपनी मल त्याग की आदतों में कोई बदलाव देखा है?",
+        options: [
+          "लगातार दस्त या कब्ज",
+          "मल में खून (चमकदार लाल या बहुत गहरा)",
+          "ऐसा लगना कि मल त्याग पूरी तरह से नहीं हुआ",
+          "मल त्याग की आदतों में कोई बदलाव नहीं"
+        ],
+        type: "radio"
+      },
+      {
+        question: "4. क्या आपको सांस लेने में कठिनाई या छाती के लक्षण हैं?",
+        options: [
+          "लगातार सांस फूलना",
+          "खांसी के साथ खून आना",
+          "छाती में दर्द जो गहरी सांस लेने से बढ़ता है",
+          "सांस/छाती के कोई लक्षण नहीं"
+        ],
+        type: "radio"
+      },
+      {
+        question: "5. क्या आपके मूत्र त्याग की आदतों में कोई बदलाव आया है?",
+        options: [
+          "मूत्र में खून",
+          "बार-बार पेशाब आना (विशेषकर रात में)",
+          "मूत्र का प्रवाह कमजोर होना या पेशाब करने में कठिनाई",
+          "मूत्र त्याग में कोई बदलाव नहीं"
+        ],
+        type: "radio"
+      },
+      {
+        question: "6. महिलाओं के लिए: क्या स्तनों में कोई बदलाव हुआ है?",
+        options: [
+          "स्तन या बगल में नई गांठ",
+          "निप्पल से स्राव (विशेषकर खूनी)",
+          "स्तन की त्वचा की बनावट/डिंपल में बदलाव",
+          "लागू नहीं/कोई बदलाव नहीं"
+        ],
+        type: "radio",
+        gender: "female"
+      },
+      {
+        question: "6. पुरुषों के लिए: क्या अंडकोष में कोई बदलाव हुआ है?",
+        options: [
+          "अंडकोष में नई गांठ या बढ़ोतरी",
+          "अंडकोष में भारीपन या बेचैनी",
+          "अंडकोष के आकार या कठोरता में बदलाव",
+          "लागू नहीं/कोई बदलाव नहीं"
+        ],
+        type: "radio",
+        gender: "male"
+      },
+      {
+        question: "7. क्या आपने त्वचा में कोई बदलाव देखा है?",
+        options: [
+          "नया तिल या मौजूदा तिल में बदलाव (आकार, रंग, आकृति)",
+          "त्वचा या आंखों का पीला पड़ना (पीलिया)",
+          "त्वचा के घाव जो ठीक नहीं होते",
+          "त्वचा में कोई बदलाव नहीं"
+        ],
+        type: "radio"
+      },
+      {
+        question: "8. क्या कैंसर का कोई पारिवारिक इतिहास है?",
+        options: [
+          "हां, तत्काल परिवार (माता-पिता/भाई-बहन/बच्चे)",
+          "हां, विस्तारित परिवार (दादा-दादी, चाचा/चाची)",
+          "मेरी जानकारी में नहीं",
+          "अनिश्चित"
+        ],
+        type: "radio"
+      },
+      {
+        question: "9. क्या आप धूम्रपान या तंबाकू उत्पादों का उपयोग करते हैं?",
+        options: [
+          "वर्तमान में धूम्रपान करता हूं",
+          "पहले धूम्रपान करता था (पिछले 10 वर्षों में छोड़ा)",
+          "कभी धूम्रपान नहीं किया",
+          "अन्य तंबाकू उत्पादों का उपयोग करता हूं (चबाने वाला तंबाकू, स्नफ, आदि)"
+        ],
+        type: "radio"
+      },
+      {
+        question: "10. आपकी आयु वर्ग क्या है?",
+        options: [
+          "40 वर्ष से कम",
+          "40-60 वर्ष",
+          "60-75 वर्ष",
+          "75 वर्ष से अधिक"
+        ],
+        type: "radio"
+      },
+      {
+        question: "11. आप अपने शराब के सेवन को कैसे वर्णित करेंगे?",
+        options: [
+          "नियमित भारी पीने वाला (प्रतिदिन 3 से अधिक ड्रिंक)",
+          "नियमित मध्यम पीने वाला (प्रतिदिन 1-2 ड्रिंक)",
+          "कभी-कभी पीने वाला",
+          "कभी नहीं या शायद ही कभी पीता हूं"
+        ],
+        type: "radio"
+      },
+      {
+        question: "12. क्या आप किसी ज्ञात कार्सिनोजन के संपर्क में आए हैं?",
+        options: [
+          "व्यावसायिक संपर्क (एस्बेस्टस, रसायन, विकिरण)",
+          "सुरक्षा के बिना महत्वपूर्ण सूर्य संपर्क",
+          "कोई ज्ञात संपर्क नहीं",
+          "अनिश्चित"
+        ],
+        type: "radio"
+      }
+    ]
+  };
+
+  // App state
+  let currentLanguage = 'english';
+  let currentQuestionIndex = 0;
+  let userResponses = {};
+  let userGender = null;
+  let userConsent = false;
+  
+  // DOM elements
+  const introScreen = document.getElementById('introScreen');
+  const assessmentScreen = document.getElementById('assessmentScreen');
+  const englishBtn = document.getElementById('englishBtn');
+  const hindiBtn = document.getElementById('hindiBtn');
+  const maleBtn = document.getElementById('maleBtn');
+  const femaleBtn = document.getElementById('femaleBtn');
+  const consentCheckbox = document.getElementById('consentCheckbox');
+  const startBtn = document.getElementById('startBtn');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const submitBtn = document.getElementById('submitBtn');
+  const resultDiv = document.getElementById('result');
+  const restartBtn = document.getElementById('restartBtn');
+  const findDoctorBtn = document.getElementById('findDoctorBtn');
+  const symptomForm = document.getElementById('symptomForm');
+  const privacyLink = document.getElementById('privacyLink');
+  const privacyModal = document.getElementById('privacyModal');
+  const closePrivacyBtn = document.getElementById('closePrivacyBtn');
+  
+  // Event listeners
+  englishBtn?.addEventListener('click', () => {
+    if (currentLanguage !== 'english') {
+      currentLanguage = 'english';
+      englishBtn.classList.add('active');
+      hindiBtn.classList.remove('active');
+      renderCurrentQuestion();
+    }
+  });
+  
+  hindiBtn?.addEventListener('click', () => {
+    if (currentLanguage !== 'hindi') {
+      currentLanguage = 'hindi';
+      hindiBtn.classList.add('active');
+      englishBtn.classList.remove('active');
+      renderCurrentQuestion();
+    }
+  });
+  
+  maleBtn?.addEventListener('click', () => {
+    userGender = 'male';
+    maleBtn.classList.add('selected');
+    femaleBtn.classList.remove('selected');
+    updateStartButton();
+  });
+  
+  femaleBtn?.addEventListener('click', () => {
+    userGender = 'female';
+    femaleBtn.classList.add('selected');
+    maleBtn.classList.remove('selected');
+    updateStartButton();
+  });
+  
+  consentCheckbox?.addEventListener('change', (e) => {
+    userConsent = e.target.checked;
+    updateStartButton();
+  });
+  
+  startBtn?.addEventListener('click', () => {
+    if (userGender && userConsent) {
+      introScreen.style.display = 'none';
+      assessmentScreen.style.display = 'block';
+      renderCurrentQuestion();
+    }
+  });
+  
+  nextBtn?.addEventListener('click', () => {
+    if (validateCurrentQuestion()) {
+      saveResponse();
+      currentQuestionIndex++;
+      renderCurrentQuestion();
+      updateButtonVisibility();
+    } else {
+      alert(currentLanguage === 'english' ? 'Please select an option to continue' : 'कृपया जारी रखने के लिए एक विकल्प चुनें');
+    }
+  });
+  
+  prevBtn?.addEventListener('click', () => {
+    currentQuestionIndex--;
+    renderCurrentQuestion();
+    updateButtonVisibility();
+  });
+  
+  submitBtn?.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (!validateCurrentQuestion()) {
+      alert(currentLanguage === 'english' 
+        ? 'Please select an option to submit' 
+        : 'कृपया सबमिट करने के लिए एक विकल्प चुनें');
+      return;
+    }
+    
+    saveResponse();
+    
+    if (Object.keys(userResponses).length < getFilteredQuestions().length) {
+      alert(currentLanguage === 'english'
+        ? `Please answer all questions before submitting`
+        : `सबमिट करने से पहले कृपया सभी प्रश्नों का उत्तर दें`);
+      return;
+    }
+    
+    showResults();
+  });
+  
+  restartBtn?.addEventListener('click', () => {
+    currentQuestionIndex = 0;
+    userResponses = {};
+    assessmentScreen.style.display = 'block';
+    resultDiv.style.display = 'none';
+    renderCurrentQuestion();
+    updateButtonVisibility();
+  });
+  
+  
+  privacyLink?.addEventListener('click', (e) => {
+    e.preventDefault();
+    privacyModal.style.display = 'flex';
+  });
+  
+  closePrivacyBtn?.addEventListener('click', () => {
+    privacyModal.style.display = 'none';
+  });
+  
+  // Helper functions
+  function updateStartButton() {
+    startBtn.disabled = !(userGender && userConsent);
+  }
+  
+  function getFilteredQuestions() {
+    return questions[currentLanguage].filter(q => !q.gender || q.gender === userGender);
+  }
+  
+  function renderCurrentQuestion() {
+    const filteredQuestions = getFilteredQuestions();
+    const questionData = filteredQuestions[currentQuestionIndex];
+    const questionNumber = currentQuestionIndex + 1;
+    
+    let html = `
+      <div class="question-container" id="question${questionNumber}">
+        <h3>${questionData.question}</h3>
+        <div class="options-container">
+    `;
+    
+    questionData.options.forEach((option, index) => {
+      const isChecked = userResponses[questionNumber]?.includes(index) || 
+                       userResponses[questionNumber] === index;
+      const inputType = questionData.type === 'checkbox' ? 'checkbox' : 'radio';
+      
+      html += `
+        <label class="option">
+          <input type="${inputType}" name="symptom${questionNumber}" value="${index}" ${isChecked ? 'checked' : ''}>
+          ${option}
+        </label>
+      `;
+    });
+    
+    html += `</div></div>`;
+    symptomForm.innerHTML = html;
+    
+    // Add event listeners to inputs to enable/disable next button
+    const inputs = symptomForm.querySelectorAll('input');
+    inputs.forEach(input => {
+      input.addEventListener('change', () => {
+        nextBtn.disabled = !validateCurrentQuestion();
+      });
+    });
+  }
+  
+  function saveResponse() {
+    const questionNumber = currentQuestionIndex + 1;
+    const questionData = getFilteredQuestions()[currentQuestionIndex];
+    
+    if (questionData.type === 'checkbox') {
+      const selectedOptions = Array.from(
+        document.querySelectorAll(`input[name="symptom${questionNumber}"]:checked`)
+      ).map(el => parseInt(el.value));
+      
+      userResponses[questionNumber] = selectedOptions.length > 0 ? selectedOptions : undefined;
+    } else {
+      const selectedOption = document.querySelector(`input[name="symptom${questionNumber}"]:checked`);
+      userResponses[questionNumber] = selectedOption ? parseInt(selectedOption.value) : undefined;
+    }
+  }
+  
+  function validateCurrentQuestion() {
+    const questionNumber = currentQuestionIndex + 1;
+    const questionData = getFilteredQuestions()[currentQuestionIndex];
+    
+    if (questionData.type === 'checkbox') {
+      const selectedOptions = document.querySelectorAll(`input[name="symptom${questionNumber}"]:checked`);
+      return selectedOptions.length > 0;
+    } else {
+      const selectedOption = document.querySelector(`input[name="symptom${questionNumber}"]:checked`);
+      return selectedOption !== null;
+    }
+  }
+  
+  function updateButtonVisibility() {
+    const filteredQuestions = getFilteredQuestions();
+    
+    prevBtn.style.display = currentQuestionIndex === 0 ? 'none' : 'inline-block';
+    nextBtn.style.display = currentQuestionIndex === filteredQuestions.length - 1 ? 'none' : 'inline-block';
+    submitBtn.style.display = currentQuestionIndex === filteredQuestions.length - 1 ? 'inline-block' : 'none';
+    
+    // Disable next button until an option is selected
+    nextBtn.disabled = !validateCurrentQuestion();
+    
+    if (currentLanguage === 'hindi') {
+      prevBtn.textContent = 'पिछला';
+      nextBtn.textContent = 'अगला';
+      submitBtn.textContent = 'सबमिट करें';
+      restartBtn.textContent = 'पुनः आरंभ करें';
+    } else {
+      prevBtn.textContent = 'Previous';
+      nextBtn.textContent = 'Next';
+      submitBtn.textContent = 'Submit';
+      restartBtn.textContent = 'Restart Assessment';
+    }
+  }
+  
+  function showResults() {
+    const prediction = predictCancer(userResponses);
+    const confidencePercentage = Math.min(Math.floor((prediction.score / 30) * 100), 95);
+    
+    if (currentLanguage === 'hindi') {
+      document.getElementById('cancerType').innerHTML = `
+        <span class="cancer-type ${prediction.class}">${prediction.hindi.type}</span>
+      `;
+      document.getElementById('confidenceBar').style.width = `${confidencePercentage}%`;
+      document.getElementById('confidenceText').textContent = `आत्मविश्वास स्तर: ${confidencePercentage}%`;
+      document.getElementById('cancerStage').textContent = prediction.hindi.stage;
+      document.getElementById('recommendedDoctor').textContent = prediction.hindi.doctor;
+      document.getElementById('recommendedTests').textContent = prediction.hindi.tests;
+            document.getElementById('recommendedTests').textContent = prediction.hindi.tests;
+      document.getElementById('nextSteps').textContent = prediction.hindi.nextSteps;
+      document.getElementById('emergencyInfo').textContent = prediction.hindi.emergency;
+    } else {
+      document.getElementById('cancerType').innerHTML = `
+        <span class="cancer-type ${prediction.class}">${prediction.type}</span>
+      `;
+      document.getElementById('confidenceBar').style.width = `${confidencePercentage}%`;
+      document.getElementById('confidenceText').textContent = `Confidence level: ${confidencePercentage}%`;
+      document.getElementById('cancerStage').textContent = prediction.stage;
+      document.getElementById('recommendedDoctor').textContent = prediction.doctor;
+      document.getElementById('recommendedTests').textContent = prediction.tests;
+      document.getElementById('nextSteps').textContent = prediction.nextSteps;
+      document.getElementById('emergencyInfo').textContent = prediction.emergency;
+    }
+    
+    assessmentScreen.style.display = 'none';
+    resultDiv.style.display = 'block';
+    
+    // Save responses to Firestore if consented
+    if (userConsent) {
+      saveResponsesToFirestore(prediction);
+    }
+  }
+  
+  function predictCancer(responses) {
+    // This is a simplified prediction algorithm
+    // In a real application, this would use a more sophisticated model
+    
+    const symptoms = responses[1] || [];
+    const duration = responses[2];
+    const bowelChanges = responses[3];
+    const breathingSymptoms = responses[4];
+    const urinaryChanges = responses[5];
+    const genderSpecificChanges = responses[6];
+    const skinChanges = responses[7];
+    const familyHistory = responses[8];
+    const smoking = responses[9];
+    const age = responses[10];
+    const alcohol = responses[11];
+    const carcinogenExposure = responses[12];
+    
+    let score = 0;
+    let possibleTypes = [];
+    
+    // Calculate score based on symptoms
+    if (symptoms.includes(0)) score += 3; // Persistent cough
+    if (symptoms.includes(1)) score += 4; // Unexplained weight loss
+    if (symptoms.includes(2)) score += 2; // Extreme fatigue
+    if (symptoms.includes(3)) score += 5; // Unusual lumps
+    if (symptoms.includes(4)) score += 3; // Persistent pain
+    if (symptoms.includes(5)) score += 3; // Difficulty swallowing
+    if (symptoms.includes(6)) score += 2; // Persistent indigestion
+    if (symptoms.includes(7)) score += 3; // Bowel/bladder changes
+    
+    // Duration multiplier
+    if (duration === 1) score *= 1.2; // 1-3 months
+    if (duration === 2) score *= 1.5; // 3-6 months
+    if (duration === 3) score *= 2;   // More than 6 months
+    
+    // Specific symptoms
+    if (bowelChanges === 0 || bowelChanges === 1) {
+      score += 4;
+      possibleTypes.push("Colon Cancer");
+    }
+    
+    if (breathingSymptoms === 0 || breathingSymptoms === 1 || breathingSymptoms === 2) {
+      score += 4;
+      possibleTypes.push("Lung Cancer");
+    }
+    
+    if (urinaryChanges === 0 || urinaryChanges === 1 || urinaryChanges === 2) {
+      score += 3;
+      if (userGender === 'male') possibleTypes.push("Prostate Cancer");
+      else possibleTypes.push("Bladder Cancer");
+    }
+    
+    if (genderSpecificChanges !== undefined && genderSpecificChanges !== 3) {
+      score += 5;
+      if (userGender === 'female') possibleTypes.push("Breast Cancer");
+      if (userGender === 'male') possibleTypes.push("Testicular Cancer");
+    }
+    
+    if (skinChanges === 0 || skinChanges === 2) {
+      score += 3;
+      possibleTypes.push("Skin Cancer");
+    }
+    if (skinChanges === 1) {
+      score += 2;
+      possibleTypes.push("Liver Cancer");
+    }
+    
+    // Risk factors
+    if (familyHistory === 0) score += 3;
+    if (familyHistory === 1) score += 2;
+    
+    if (smoking === 0 || smoking === 3) score += 4;
+    if (smoking === 1) score += 2;
+    
+    if (age === 1) score += 1;
+    if (age === 2) score += 2;
+    if (age === 3) score += 3;
+    
+    if (alcohol === 0) score += 3;
+    if (alcohol === 1) score += 2;
+    
+    if (carcinogenExposure === 0 || carcinogenExposure === 1) score += 3;
+    
+    // Determine most likely cancer type
+    let predictedType = "No specific cancer type identified";
+    let predictedClass = "other-cancer";
+    
+    if (possibleTypes.length > 0) {
+      // Count occurrences of each type
+      const typeCounts = possibleTypes.reduce((acc, type) => {
+        acc[type] = (acc[type] || 0) + 1;
+        return acc;
+      }, {});
+      
+      // Get type with highest count
+      predictedType = Object.entries(typeCounts).sort((a, b) => b[1] - a[1])[0][0];
+      
+      // Set CSS class based on type
+      if (predictedType.includes("Lung")) predictedClass = "lung-cancer";
+      else if (predictedType.includes("Breast")) predictedClass = "breast-cancer";
+      else if (predictedType.includes("Colon")) predictedClass = "colon-cancer";
+      else if (predictedType.includes("Prostate")) predictedClass = "prostate-cancer";
+      else if (predictedType.includes("Skin")) predictedClass = "skin-cancer";
+      else predictedClass = "other-cancer";
+    }
+    
+    // Determine stage based on score and duration
+    let stage = "Not applicable";
+    if (score > 15) {
+      if (duration === 0) stage = "Possibly early stage";
+      else if (duration === 1 || duration === 2) stage = "Possibly intermediate stage";
+      else stage = "Possibly advanced stage";
+    }
+    
+    // Determine recommended doctor
+    let doctor = "Primary care physician for initial evaluation";
+    if (predictedType.includes("Lung")) doctor = "Pulmonologist or Thoracic Oncologist";
+    else if (predictedType.includes("Breast")) doctor = "Breast Specialist or Oncologist";
+    else if (predictedType.includes("Colon")) doctor = "Gastroenterologist or Surgical Oncologist";
+    else if (predictedType.includes("Prostate")) doctor = "Urologist or Oncologist";
+    else if (predictedType.includes("Skin")) doctor = "Dermatologist";
+    else if (predictedType.includes("Testicular")) doctor = "Urologist";
+    
+    // Recommended tests
+    let tests = "Complete blood count (CBC), Comprehensive metabolic panel";
+    if (predictedType.includes("Lung")) tests += ", Chest X-ray or CT scan, Bronchoscopy if indicated";
+    else if (predictedType.includes("Breast")) tests += ", Mammogram, Breast ultrasound, Possible biopsy";
+    else if (predictedType.includes("Colon")) tests += ", Colonoscopy, Fecal occult blood test";
+    else if (predictedType.includes("Prostate")) tests += ", PSA test, Digital rectal exam";
+    else if (predictedType.includes("Skin")) tests += ", Skin biopsy, Dermatoscopy";
+    
+    // Next steps
+    const nextSteps = "Schedule an appointment with your primary care physician to discuss these symptoms. Bring a list of all symptoms, their duration, and any family history of cancer.";
+    
+    // Emergency info
+    const emergencyInfo = "Seek immediate care if you experience: severe pain, difficulty breathing, coughing up large amounts of blood, uncontrolled bleeding, or sudden severe neurological changes.";
+    
+    // Hindi translations
+    const hindiResults = {
+      type: predictedType.replace("Cancer", "कैंसर").replace("Breast", "स्तन").replace("Lung", "फेफड़े").replace("Colon", "कोलन").replace("Prostate", "प्रोस्टेट").replace("Skin", "त्वचा").replace("Testicular", "अंडकोष"),
+      stage: stage.replace("Possibly early stage", "संभवतः प्रारंभिक अवस्था").replace("Possibly intermediate stage", "संभवतः मध्यवर्ती अवस्था").replace("Possibly advanced stage", "संभवतः उन्नत अवस्था"),
+      doctor: doctor.replace("Primary care physician", "प्राथमिक देखभाल चिकित्सक").replace("Pulmonologist", "फुफ्फुस विशेषज्ञ").replace("Thoracic Oncologist", "वक्ष ऑन्कोलॉजिस्ट").replace("Breast Specialist", "स्तन विशेषज्ञ").replace("Oncologist", "ऑन्कोलॉजिस्ट").replace("Gastroenterologist", "गैस्ट्रोएंटेरोलॉजिस्ट").replace("Surgical Oncologist", "सर्जिकल ऑन्कोलॉजिस्ट").replace("Urologist", "मूत्र रोग विशेषज्ञ").replace("Dermatologist", "त्वचा विशेषज्ञ"),
+      tests: tests.replace("Complete blood count (CBC)", "पूर्ण रक्त गणना (सीबीसी)").replace("Comprehensive metabolic panel", "व्यापक चयापचय पैनल").replace("Chest X-ray or CT scan", "छाती का एक्स-रे या सीटी स्कैन").replace("Bronchoscopy if indicated", "ब्रोंकोस्कोपी यदि संकेत दिया गया हो").replace("Mammogram", "मैमोग्राम").replace("Breast ultrasound", "स्तन अल्ट्रासाउंड").replace("Possible biopsy", "संभवतः बायोप्सी").replace("Colonoscopy", "कोलोनोस्कोपी").replace("Fecal occult blood test", "मल गुप्त रक्त परीक्षण").replace("PSA test", "पीएसए परीक्षण").replace("Digital rectal exam", "डिजिटल मलाशय परीक्षा").replace("Skin biopsy", "त्वचा बायोप्सी").replace("Dermatoscopy", "डर्मेटोस्कोपी"),
+      nextSteps: "इन लक्षणों पर चर्चा करने के लिए अपने प्राथमिक देखभाल चिकित्सक के साथ एक नियुक्ति शेड्यूल करें। सभी लक्षणों, उनकी अवधि और कैंसर के किसी भी पारिवारिक इतिहास की एक सूची लाएं।",
+      emergency: "तत्काल देखभाल लें यदि आप अनुभव करते हैं: गंभीर दर्द, सांस लेने में कठिनाई, बड़ी मात्रा में खून की खांसी, अनियंत्रित रक्तस्राव, या अचानक गंभीर न्यूरोलॉजिकल परिवर्तन।"
+    };
+    
+    return {
+      type: predictedType,
+      class: predictedClass,
+      score: score,
+      stage: stage,
+      doctor: doctor,
+      tests: tests,
+      nextSteps: nextSteps,
+      emergency: emergencyInfo,
+      hindi: hindiResults
+    };
+  }
+  
+  function saveResponsesToFirestore(prediction) {
+    try {
+      const responseData = {
+        gender: userGender,
+        responses: userResponses,
+        predictedCancer: prediction.type,
+        confidenceScore: prediction.score,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        language: currentLanguage
+      };
+      
+      db.collection("cancerAssessments").add(responseData)
+        .then(() => {
+          console.log("Assessment saved successfully");
+          analytics.logEvent('assessment_completed', {
+            predicted_cancer: prediction.type,
+            score: prediction.score
+          });
+        })
+        .catch(error => {
+          console.error("Error saving assessment: ", error);
+        });
+    } catch (error) {
+      console.error("Error in saveResponsesToFirestore: ", error);
+    }
+  }
+;
+</script>
+</body>
+</html>
