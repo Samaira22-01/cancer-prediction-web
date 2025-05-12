@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Treatment Tracker with Advanced Reminders</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+      color: #333;
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .logo-container {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    .logo {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 30px;
+    }
+    
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    
+    label {
+      font-weight: bold;
+      color: #2c3e50;
+    }
+    
+    input, select {
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    
+    .book-btn {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      transition: background-color 0.3s;
+      margin-top: 20px;
+    }
+    
+    .book-btn:hover {
+      background-color: #2980b9;
+    }
+    
+    .book-btn:disabled {
+      background-color: #95a5a6;
+      cursor: not-allowed;
+    }
+    
+    #trackerResult {
+      margin-top: 30px;
+      padding: 20px;
+      background-color: #f8f9fa;
+      border-radius: 10px;
+      border-left: 4px solid #3498db;
+    }
+    
+    #trackerResult h2 {
+      color: #2c3e50;
+      margin-top: 0;
+    }
+    
+    #trackerResult p {
+      margin: 10px 0;
+    }
+    
+    .message {
+      padding: 12px;
+      margin: 15px 0;
+      border-radius: 8px;
+      display: none;
+    }
+    
+    .error-message {
+      background-color: #ffebee;
+      color: #c62828;
+      border-left: 4px solid #c62828;
+    }
+    
+    .success-message {
+      background-color: #e8f5e9;
+      color: #2e7d32;
+      border-left: 4px solid #2e7d32;
+    }
+    
+    .notification-permission {
+      background-color: #fff3e0;
+      color: #e65100;
+      border-left: 4px solid #e65100;
+      margin-bottom: 20px;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    
+    /* Notification styles */
+    .notification-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 1000;
+      display: none;
+      max-width: 320px;
+      animation: slideIn 0.3s ease-out;
+    }
+    
+    @keyframes slideIn {
+      from { transform: translateX(100%); }
+      to { transform: translateX(0); }
+    }
+    
+    .notification-title {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 8px;
+      color: #2c3e50;
+    }
+    
+    .notification-body {
+      margin-bottom: 15px;
+    }
+    
+    .notification-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    
+    .action-btn {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      flex-grow: 1;
+    }
+    
+    .snooze-btn {
+      background-color: #ff9800;
+      color: white;
+    }
+    
+    .dismiss-btn {
+      background-color: #f44336;
+      color: white;
+    }
+    
+    .taken-btn {
+      background-color: #4CAF50;
+      color: white;
+    }
+    
+    .snooze-options {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    
+    .snooze-option {
+      padding: 6px 10px;
+      background-color: #e3f2fd;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    
+    .snooze-option:hover {
+      background-color: #bbdefb;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo-container">
+      <img src="https://i.pinimg.com/736x/36/ff/eb/36ffebeda547af38ea92da83e83b2e48.jpg" alt="Treatment Tracker Logo" class="logo">
+    </div>
+    <h1>Treatment Tracker with Advanced Reminders</h1>
+    
+    <div id="notificationPermission" class="notification-permission" style="display: none;">
+      <p>Please enable notifications to receive medication reminders.</p>
+      <button id="enableNotifications" class="book-btn" style="margin-top: 10px;">Enable Notifications</button>
+    </div>
+    
+    <div id="errorMessage" class="message error-message"></div>
+    <div id="successMessage" class="message success-message"></div>
+    
+    <form id="trackerForm">
+      <label for="appointment">Next Doctor's Appointment:</label>
+      <input type="date" id="appointment" required>
+
+      <label for="medication">Medication Name:</label>
+      <input type="text" id="medication" required>
+
+      <label for="sideEffects">Any Side Effects:</label>
+      <input type="text" id="sideEffects" placeholder="e.g., nausea, fatigue">
+
+      <label for="medicationTime">Medication Time:</label>
+      <input type="time" id="medicationTime" required>
+
+      <label for="reminderFrequency">Reminder Frequency:</label>
+      <select id="reminderFrequency">
+        <option value="daily">Daily</option>
+        <option value="weekly">Weekly</option>
+        <option value="one-time">One-time</option>
+      </select>
+
+      <button type="submit" class="book-btn">Add Treatment Info</button>
+    </form>
+
+    <div id="trackerResult" style="display: none;">
+      <h2>Your Treatment Info</h2>
+      <p id="appointmentDetails"></p>
+      <p id="medicationDetails"></p>
+      <p id="sideEffectsDetails"></p>
+      <p id="reminderDetails"></p>
+    </div>
+  </div>
+
+  <!-- Notification Container -->
+  <div id="customNotification" class="notification-container">
+    <div class="notification-title" id="notificationTitle">Medication Reminder</div>
+    <div class="notification-body" id="notificationBody"></div>
+    <div class="notification-actions">
+      <button id="takenBtn" class="action-btn taken-btn">Mark as Taken</button>
+      <button id="snoozeBtn" class="action-btn snooze-btn">Snooze</button>
+      <button id="dismissBtn" class="action-btn dismiss-btn">Dismiss</button>
+    </div>
+    <div id="snoozeOptions" class="snooze-options" style="display: none;">
+      <div class="snooze-option" data-minutes="5">5 min</div>
+      <div class="snooze-option" data-minutes="15">15 min</div>
+      <div class="snooze-option" data-minutes="30">30 min</div>
+      <div class="snooze-option" data-minutes="60">1 hour</div>
+    </div>
+  </div>
+
+  <!-- Audio element for notification sound -->
+  <audio id="notificationSound" src="https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3" preload="auto"></audio>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize Firebase
+      const firebaseConfig = {
+        apiKey: "AIzaSyCGelEuSnOm0gy0sMNEwpvqGnQO7gWyEaI",
+        authDomain: "cancer-prediction-8bfbe.firebaseapp.com",
+        projectId: "cancer-prediction-8bfbe",
+        storageBucket: "cancer-prediction-8bfbe.appspot.com",
+        messagingSenderId: "939540065705",
+        appId: "1:939540065705:web:3a049e64c4bb886fdbe8b8",
+        measurementId: "G-4L9ZZSLF0K"
+      };
+
+      // Initialize Firebase
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.firestore();
+      const auth = firebase.auth();
+      const analytics = firebase.analytics();
+      const messaging = firebase.messaging();
+
+      // DOM Elements
+      const trackerForm = document.getElementById('trackerForm');
+      const appointmentDetails = document.getElementById('appointmentDetails');
+      const medicationDetails = document.getElementById('medicationDetails');
+      const sideEffectsDetails = document.getElementById('sideEffectsDetails');
+      const reminderDetails = document.getElementById('reminderDetails');
+      const trackerResult = document.getElementById('trackerResult');
+
+      const successMessage = document.getElementById('successMessage');
+      const errorMessage = document.getElementById('errorMessage');
+      const notificationSound = document.getElementById('notificationSound');
+      const customNotification = document.getElementById('customNotification');
+      const notificationBody = document.getElementById('notificationBody');
+      const snoozeBtn = document.getElementById('snoozeBtn');
+      const dismissBtn = document.getElementById('dismissBtn');
+      const takenBtn = document.getElementById('takenBtn');
+      const snoozeOptions = document.getElementById('snoozeOptions');
+
+      const notificationPermissionDiv = document.getElementById('notificationPermission');
+      const enableNotificationsBtn = document.getElementById('enableNotifications');
+
+      // Request Notification Permission
+      function checkNotificationPermission() {
+        if (Notification.permission !== 'granted') {
+          notificationPermissionDiv.style.display = 'block';
+        }
+      }
+
+      enableNotificationsBtn.addEventListener('click', () => {
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            notificationPermissionDiv.style.display = 'none';
+            showMessage('Notifications enabled!', 'success');
+          } else {
+            showMessage('You need to enable notifications for reminders.', 'error');
+          }
+        });
+      });
+
+      // Form submission
+      trackerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const appointment = document.getElementById('appointment').value;
+        const medication = document.getElementById('medication').value.trim();
+        const sideEffects = document.getElementById('sideEffects').value.trim();
+        const medicationTime = document.getElementById('medicationTime').value;
+        const frequency = document.getElementById('reminderFrequency').value;
+
+        if (!appointment || !medication || !medicationTime) {
+          showMessage('Please fill all required fields.', 'error');
+          return;
+        }
+
+        try {
+          // Save to Firestore
+          await db.collection('treatments').add({
+            appointment,
+            medication,
+            sideEffects,
+            medicationTime,
+            frequency,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+          });
+
+          // Display info
+          appointmentDetails.textContent = `Next Appointment: ${formatDate(appointment)}`;
+          medicationDetails.textContent = `Medication: ${medication}`;
+          sideEffectsDetails.textContent = `Side Effects: ${sideEffects || 'None'}`;
+          reminderDetails.textContent = `Reminder: ${frequency}, at ${medicationTime}`;
+
+          trackerResult.style.display = 'block';
+          showMessage('Treatment Info Saved Successfully!', 'success');
+
+          // Schedule reminders
+          scheduleReminder(medication, medicationTime, frequency);
+        } catch (err) {
+          console.error("Error adding document:", err);
+          showMessage('Failed to save treatment info.', 'error');
+        }
+      });
+
+      // Helper function to show messages
+      function showMessage(message, type) {
+        if (type === 'success') {
+          successMessage.textContent = message;
+          successMessage.style.display = 'block';
+          errorMessage.style.display = 'none';
+        } else {
+          errorMessage.textContent = message;
+          errorMessage.style.display = 'block';
+          successMessage.style.display = 'none';
+        }
+      }
+
+      // Format date for display
+      function formatDate(dateString) {
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        return new Date(dateString).toLocaleDateString(undefined, options);
+      }
+
+      // Reminder Logic
+      function scheduleReminder(medication, time, frequency) {
+        const now = new Date();
+        const [hours, minutes] = time.split(':').map(Number);
+        const targetTime = new Date(now);
+        targetTime.setHours(hours, minutes, 0, 0);
+
+        if (targetTime < now) {
+          targetTime.setDate(targetTime.getDate() + 1); // next day
+        }
+
+        const delay = targetTime.getTime() - now.getTime();
+        setTimeout(() => showReminder(medication), delay);
+
+        // For daily reminders, set up recurring
+        if (frequency === 'daily') {
+          const dailyInterval = 24 * 60 * 60 * 1000; // 24 hours
+          setInterval(() => showReminder(medication), dailyInterval);
+        }
+      }
+
+      // Show Reminder
+      function showReminder(medication) {
+        notificationSound.play();
+        customNotification.style.display = 'block';
+        notificationBody.textContent = `It's time to take your medication: ${medication}`;
+      }
+
+      // Notification Actions
+      takenBtn.addEventListener('click', () => {
+        customNotification.style.display = 'none';
+        showMessage('Medication marked as taken!', 'success');
+      });
+
+      dismissBtn.addEventListener('click', () => {
+        customNotification.style.display = 'none';
+      });
+
+      snoozeBtn.addEventListener('click', () => {
+        snoozeOptions.style.display = 'flex';
+      });
+
+      snoozeOptions.addEventListener('click', function(e) {
+        if (e.target.classList.contains('snooze-option')) {
+          const minutes = parseInt(e.target.dataset.minutes);
+          const medication = notificationBody.textContent.replace("It's time to take your medication: ", "");
+          setTimeout(() => showReminder(medication), minutes * 60 * 1000);
+          customNotification.style.display = 'none';
+          snoozeOptions.style.display = 'none';
+          showMessage(`Reminder snoozed for ${minutes} minutes`, 'success');
+        }
+      });
+
+      // Check notification permission on load
+      checkNotificationPermission();
+    });
+  </script>
+</body>
+</html>
